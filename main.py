@@ -38,9 +38,13 @@ def simple_function():
       Returns:
     """
     
-
+def on_click(event):
+    widget = event.widget
+    index = widget.index("@%s,%s" % (event.x, event.y))
+    if index:
+        tag = widget.tag_names(index)
+        print("Clicked on tag:", tag)
 def draw_3d_plot():
-    fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
 
     point1 = [1, 3, 2]
@@ -58,28 +62,31 @@ def draw_3d_plot():
 
     canvas = FigureCanvasTkAgg(fig, master=frame_plot)
     canvas.draw()
-    canvas.get_tk_widget().grid(row=0, column=0)
+    canvas.get_tk_widget().grid(row=0, column=1)
 
 # Create main window
+fig = plt.figure(figsize=(15,9.7))
+ax = fig.add_subplot(111, projection="3d")
 root = tk.Tk()
 root.title("Interactive 3D Plot")
-
+root.geometry("1920x1080")
 # Create main frame
 main_frame = ttk.Frame(root)
-main_frame.grid(row=0, column=0, padx=5, pady=5)
+main_frame.grid(row=0, column=1, padx=0, pady=0)
 
 # Create plot frame
 frame_plot = ttk.Frame(main_frame)
-frame_plot.grid(row=0, column=0)
+frame_plot.grid(row=0, column=1, padx = 10, pady= 0)
 
 # Create control frame
 frame_control = ttk.Frame(main_frame)
-frame_control.grid(row=0, column=1, padx=5, pady=5)
-
+frame_control.grid(row=1, column=1, padx=0, pady=0)
+main_frame.grid()
 # Add button to draw plot
-btn_draw = ttk.Button(frame_control, text="Draw 3D Plot", command=draw_3d_plot)
-btn_draw.grid(row=0, column=0, pady=5)
-
+btn_draw = tk.Button(frame_control, text="Draw 3D Plot", command=draw_3d_plot, height = 5, width=213).grid(row=1,column=0)
+textbox = tk.Text(root,height=66, width = 70).grid(row = 0, column = 0)
+canvas = FigureCanvasTkAgg(fig, master=frame_plot)
+canvas.get_tk_widget().grid(row=0, column= 1)
 root.mainloop()
 
 
