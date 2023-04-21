@@ -1,91 +1,73 @@
-import tkinter as tk
-from tkinter import ttk
+import sys
+
+# Setting the Qt bindings for QtPy
+import os
+os.environ["QT_API"] = "pyqt5"
+
+from qtpy import QtWidgets
 
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+import pyvista as pv
+from pyvistaqt import QtInteractor, MainWindow
+
 from figure_classes import *
 
+line_fig = Line((0, 1, 2), (1, 3, -5))
 
-# Function to create and display the 3D plot
+class MyMainWindow(MainWindow):
 
+    def __init__(self, parent=None, show=True):
+        QtWidgets.QMainWindow.__init__(self, parent)
 
-"""
-TODO:
-    !!!!!!!!!! CLEAR DOCUMENTATION !!!!!!!!!!!!!!!!!!!!
-    - create classes for different types of input:
-    1) Line
-    2) Curve
-    3) Plain
-    4) Rotational Figures
-    5) Conic Figures
-    6) Cillyndric Figures
-    - create input field
-    - Customization tool i.e. zalivka
-    - Intersections tool
-    - save to file
-    - animations
+        # create the frame
+        self.frame = QtWidgets.QFrame()
+        vlayout = QtWidgets.QVBoxLayout()
 
-"""
+        # add the pyvista interactor object
+        self.plotter = QtInteractor(self.frame)
+        vlayout.addWidget(self.plotter.interactor)
+        self.signal_close.connect(self.plotter.close)
 
+        self.frame.setLayout(vlayout)
+        self.setCentralWidget(self.frame)
 
+        # simple menu to demo functions
+        mainMenu = self.menuBar()
+        fileMenu = mainMenu.addMenu('File')
+        exitButton = QtWidgets.QAction('Exit', self)
+        exitButton.setShortcut('Ctrl+Q')
+        exitButton.triggered.connect(self.close)
+        fileMenu.addAction(exitButton)
 
+        # allow adding a sphere
+        meshMenu = mainMenu.addMenu('Mesh')
+        self.add_sphere_action = QtWidgets.QAction('Add Sphere', self)
+        self.add_sphere_action.triggered.connect(self.add_sphere)
+        meshMenu.addAction(self.add_sphere_action)
 
-def draw_plots(plots, ax):
-    """
-        This function draws all plots
-    """
-    for figure in plots:
-        figure.draw(ax)
+        self.add_line_action = QtWidgets.QAction('Add a Line', self)
+        self.add_line_action.triggered.connect(self.add_line)
+        meshMenu.addAction(self.add_line_action)
 
-    return ax
+        if show:
+            self.show()
 
-def main():
-    """
-    Main launch code
-    """
+    def add_sphere(self):
+        """ add a sphere to the pyqt frame """
+        sphere = pv.Sphere()
+        self.plotter.add_mesh(sphere, show_edges=True)
+        self.plotter.reset_camera()
 
-    plots = [Line([0, 1, 2], [2, 3, 5])]    
+    def add_line(self):
+        """ add a line to the pyqt frame"""
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-
-    ax.set_xlabel("X Axis")
-    ax.set_ylabel("Y Axis")
-    ax.set_zlabel("Z Axis")
-
-    # Create main window
-    root = tk.Tk()
-    root.title("Interactive 3D Plot")
-
-    # Create main frame
-    main_frame = ttk.Frame(root)
-    main_frame.grid(row=0, column=0, padx=5, pady=5)
-
-    # Create plot frame
-    frame_plot = ttk.Frame(main_frame)
-    frame_plot.grid(row=0, column=0)
-
-    # Create control frame
-    frame_control = ttk.Frame(main_frame)
-    frame_control.grid(row=0, column=1, padx=5, pady=5)
-
-    def draw_button_pressed():
-        global ax
-        ax = draw_plots(plots, ax)
-
-    # Add button to draw plot
-    btn_draw = ttk.Button(frame_control, text="Draw 3D Plot",
-                          command=draw_button_pressed)
-    btn_draw.grid(row=0, column=0, pady=5)
-
-    canvas = FigureCanvasTkAgg(fig, master=frame_plot)
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=0, column=0)
-
-    root.mainloop()
-
+        global line_fig
+        line = pv.Line(line_fig.d1, line_fig.d2)
+        self.plotter.add_mesh(line)
+        self.plotter.reset_camera()
 
 if __name__ == '__main__':
-    main()
+    app = QtWidgets.QApplication(sys.argv)
+    window = MyMainWindow()
+    sys.exit(app.exec_())

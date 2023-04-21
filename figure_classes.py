@@ -8,7 +8,7 @@ class Line():
         This is a class for Line figure
     """
 
-    def __init__(self, d1, d2) -> None:
+    def __init__(self, d1 : tuple, d2 : tuple) -> None:
         self.d1 = d1
         self.d2 = d2
 
