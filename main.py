@@ -1,14 +1,19 @@
-import tkinter as tk
-from tkinter import ttk
-
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
+from PyQt5.QtCore import Qt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from figure_classes import *
+
 
 # Function to create and display the 3D plot
 
-plots = []
 
 """
 TODO:
@@ -25,69 +30,99 @@ TODO:
     - Intersections tool
     - save to file
     - animations
-
 """
+class Window(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-def simple_function():
-    """
-      This function doesn't do notging
-      ------
-      Inputs:
+ 
+        self.setWindowTitle("PyQt Matplotlib 3D plot")
+        self.setGeometry(50, 50, 800, 600)
+
+
+        main_widget = QWidget(self)
+        main_layout = QHBoxLayout(main_widget)
+
+
+        left_widget = QWidget(main_widget)
+        left_layout = QVBoxLayout(left_widget)
+        left_widget.setMaximumWidth(300)
+        main_layout.addWidget(left_widget)
+
+        self.text_box = QTextEdit()
+        left_layout.addWidget(self.text_box)
+
+        
+        right_widget = QWidget(main_widget)
+        right_layout = QVBoxLayout(right_widget)
+        main_layout.addWidget(right_widget)
+
       
-      -------
-      Returns:
-    """
+        fig = plt.figure()
+        self.ax = fig.add_subplot(111, projection="3d")
+
+
+        self.canvas = FigureCanvas(fig)
+        right_layout.addWidget(self.canvas)
+
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
+
+ 
+        update_button = QPushButton("Update 3D plot", self)
+        update_button.clicked.connect(self.update_plot)
+        left_layout.addWidget(update_button)
+
+ 
+        line_button = QPushButton("Line", self)
+        line_button.clicked.connect(self.add_line)
+        left_layout.addWidget(line_button)
+
+      
+        self.setCentralWidget(main_widget)
+        self.show()
+
+    def update_plot(self):
+
+        input_text = self.text_box.toPlainText()
+        lines = input_text.strip().split('\n')
+
+        # Clear 3D plot
+        self.ax.clear()
+
+      
+        for line in lines:
+            
+            coords = line.split(',')
+            x1, y1, z1, x2, y2, z2 = map(float, coords)
+
+
+            self.ax.plot([x1, x2], [y1, y2], [z1, z2])
+
+        self.ax.set_xlabel("X Label")
+        self.ax.set_ylabel("Y Label")
+        self.ax.set_zlabel("Z Label")
+
     
-def on_click(event):
-    widget = event.widget
-    index = widget.index("@%s,%s" % (event.x, event.y))
-    if index:
-        tag = widget.tag_names(index)
-        print("Clicked on tag:", tag)
-def draw_3d_plot():
-    ax = fig.add_subplot(111, projection="3d")
+        self.canvas.draw()
 
-    point1 = [1, 3, 2]
-    point2 = [-1, 4, -8]
+    def add_line(self):
+  
+        msg_box = QMessageBox()
+        msg_box.setText("Enter the coordinates of the two points for the line:")
+        x1, ok1 = QInputDialog.getDouble(self, "Input", "X1:")
+        y1, ok2 = QInputDialog.getDouble(self, "Input", "Y1:")
+        z1, ok3 = QInputDialog.getDouble(self, "Input", "Z1:")
+        x2, ok4 = QInputDialog.getDouble(self, "Input", "X2:")
+        y2, ok5 = QInputDialog.getDouble(self, "Input", "Y2:")
+        z2, ok6 = QInputDialog.getDouble(self, "Input", "Z2:")
 
-    x_values = [point1[0], point2[0]]
-    y_values = [point1[1], point2[1]]
-    z_values = [point1[2], point2[2]]
-
-    ax.plot(x_values, y_values, z_values, 'bo', linestyle='-')
-
-    ax.set_xlabel("X Axis")
-    ax.set_ylabel("Y Axis")
-    ax.set_zlabel("Z Axis")
-
-    canvas = FigureCanvasTkAgg(fig, master=frame_plot)
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=0, column=1)
-
-# Create main window
-fig = plt.figure(figsize=(15,9.7))
-ax = fig.add_subplot(111, projection="3d")
-root = tk.Tk()
-root.title("Interactive 3D Plot")
-root.geometry("1920x1080")
-# Create main frame
-main_frame = ttk.Frame(root)
-main_frame.grid(row=0, column=1, padx=0, pady=0)
-
-# Create plot frame
-frame_plot = ttk.Frame(main_frame)
-frame_plot.grid(row=0, column=1, padx = 10, pady= 0)
-
-# Create control frame
-frame_control = ttk.Frame(main_frame)
-frame_control.grid(row=1, column=1, padx=0, pady=0)
-main_frame.grid()
-# Add button to draw plot
-btn_draw = tk.Button(frame_control, text="Draw 3D Plot", command=draw_3d_plot, height = 5, width=213).grid(row=1,column=0)
-textbox = tk.Text(root,height=66, width = 70).grid(row = 0, column = 0)
-canvas = FigureCanvasTkAgg(fig, master=frame_plot)
-canvas.get_tk_widget().grid(row=0, column= 1)
-root.mainloop()
-
-
-
+  
+        if ok1 and ok2 and ok3 and ok4 and ok5 and ok6:
+            line_text = f"{x1}, {y1}, {z1}, {x2}, {y2}, {z2}"
+            self.text_box.append(line_text)
+            self.update_plot()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = Window()
+    sys.exit(app.exec_())
