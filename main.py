@@ -15,6 +15,8 @@ from figure_classes import *
 
 line_fig = Line((0, 1, 2), (1, 3, -5))
 
+plots = [line_fig, ]
+
 class MyMainWindow(MainWindow):
 
     def __init__(self, parent=None, show=True):
@@ -43,7 +45,7 @@ class MyMainWindow(MainWindow):
         # allow adding a sphere
         meshMenu = mainMenu.addMenu('Mesh')
         self.add_sphere_action = QtWidgets.QAction('Add Sphere', self)
-        self.add_sphere_action.triggered.connect(self.add_sphere)
+        self.add_sphere_action.triggered.connect(self.add_sphere_btn)
         meshMenu.addAction(self.add_sphere_action)
 
         self.add_line_action = QtWidgets.QAction('Add a Line', self)
@@ -60,7 +62,7 @@ class MyMainWindow(MainWindow):
         self.plotter.reset_camera()
 
     def add_line(self):
-        """ add a line to the pyqt frame"""
+        """ add a line to the pyqt frame """
 
         global line_fig
         line = pv.Line(line_fig.d1, line_fig.d2)
