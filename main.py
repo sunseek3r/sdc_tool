@@ -1,15 +1,16 @@
 import sys
+
+import os
+os.environ["QT_API"] = "pyqt5"
+
+from qtpy import QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
 from PyQt5.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
+from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
+import pyvista as pv
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from figure_classes import *
+from inputs import SphereDialog
 
 
 # Function to create and display the 3D plot
@@ -31,12 +32,14 @@ TODO:
     - save to file
     - animations
 """
-class Window(QMainWindow):
+
+
+class Window(MainWindow):
     def __init__(self):
-        super().__init__()
+        QtWidgets.QMainWindow.__init__(self, parent=None)
 
  
-        self.setWindowTitle("PyQt Matplotlib 3D plot")
+        self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
 
@@ -56,72 +59,42 @@ class Window(QMainWindow):
         right_widget = QWidget(main_widget)
         right_layout = QVBoxLayout(right_widget)
         main_layout.addWidget(right_widget)
-
-      
-        fig = plt.figure()
-        self.ax = fig.add_subplot(111, projection="3d")
+        
 
 
-        self.canvas = FigureCanvas(fig)
-        right_layout.addWidget(self.canvas)
+        self.plotter = QtInteractor()
+        right_layout.addWidget(self.plotter)
 
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
- 
-        update_button = QPushButton("Update 3D plot", self)
-        update_button.clicked.connect(self.update_plot)
-        left_layout.addWidget(update_button)
+        sphere_button = QPushButton("Sphere", self)
+        sphere_button.clicked.connect(self.add_sphere)
+        left_layout.addWidget(sphere_button)
 
- 
-        line_button = QPushButton("Line", self)
-        line_button.clicked.connect(self.add_line)
-        left_layout.addWidget(line_button)
+        self.plotter.show_grid()
 
-      
+
         self.setCentralWidget(main_widget)
         self.show()
 
-    def update_plot(self):
-
-        input_text = self.text_box.toPlainText()
-        lines = input_text.strip().split('\n')
-
-        # Clear 3D plot
-        self.ax.clear()
-
-      
-        for line in lines:
-            
-            coords = line.split(',')
-            x1, y1, z1, x2, y2, z2 = map(float, coords)
-
-
-            self.ax.plot([x1, x2], [y1, y2], [z1, z2])
-
-        self.ax.set_xlabel("X Label")
-        self.ax.set_ylabel("Y Label")
-        self.ax.set_zlabel("Z Label")
-
     
-        self.canvas.draw()
 
     def add_line(self):
-  
-        msg_box = QMessageBox()
-        msg_box.setText("Enter the coordinates of the two points for the line:")
-        x1, ok1 = QInputDialog.getDouble(self, "Input", "X1:")
-        y1, ok2 = QInputDialog.getDouble(self, "Input", "Y1:")
-        z1, ok3 = QInputDialog.getDouble(self, "Input", "Z1:")
-        x2, ok4 = QInputDialog.getDouble(self, "Input", "X2:")
-        y2, ok5 = QInputDialog.getDouble(self, "Input", "Y2:")
-        z2, ok6 = QInputDialog.getDouble(self, "Input", "Z2:")
+        pass
+    
+    def add_sphere(self):
+        dialog = SphereDialog()
+        centre = []
+        if dialog.exec():
+            centre = dialog.getInputs()
+        centre = [float(i) for i in centre]
+        radius, ok = QInputDialog.getDouble(self, "Input", "Radius")
+        if ok:
+            sphere = pv.Sphere(radius, centre)
+            self.plotter.add_mesh(sphere, opacity=0.5, show_edges=False)
+            self.text_box.append(f"Sphere: centre:{centre}, radius:{radius}")
+            self.plotter.reset_camera()
+        
 
-  
-        if ok1 and ok2 and ok3 and ok4 and ok5 and ok6:
-            line_text = f"{x1}, {y1}, {z1}, {x2}, {y2}, {z2}"
-            self.text_box.append(line_text)
-            self.update_plot()
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = Window()
