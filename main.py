@@ -10,7 +10,7 @@ from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from figure_classes import *
-from inputs import SphereDialog, LineDialog
+from inputs import SphereDialog, LineDialog, VectorLineDialog
 from settings import Settings
 
 # Function to create and display the 3D plot
@@ -74,6 +74,10 @@ class Window(MainWindow):
         line_button.clicked.connect(self.add_line)
         left_layout.addWidget(line_button)
         
+        line_by_vector_button = QPushButton("Line by vector", self)
+        line_by_vector_button.clicked.connect(self.add_vector_line)
+        left_layout.addWidget(line_by_vector_button)
+
         self.plotter.show_grid()
 
 
@@ -100,7 +104,53 @@ class Window(MainWindow):
         self.plotter.add_mesh(line, color='black', line_width=5)
         self.text_box.append(f"Line: {point1}, {point2}")
         self.plotter.reset_camera()
+
+    def add_vector_line(self):
+        def _get_multiplier(directional_coor, anchor_coor, coor_type):
+            if coor_type == "X":
+                bounds = self.settings.x_bounds
+            elif coor_type == "Y":
+                bounds = self.settings.y_bounds
+            elif coor_type == "Z":
+                bounds = self.settings.z_bounds
+            
+            if directional_coor == 0:
+                return 1e9 # cannot extend with this coordinate => return infinity
+
+            if directional_coor < 0:
+                return (bounds[0] - anchor_coor) / directional_coor
+            else:
+                print((bounds[1] - anchor_coor) / directional_coor)
+                return (bounds[1] - anchor_coor) / directional_coor
+                
     
+        dialog = LineDialog(0)
+        point0 = []
+        if dialog.exec():
+            point0 = dialog.getInputs()
+        
+        dialog = VectorLineDialog()
+        vector = []
+        if dialog.exec():
+            vector = dialog.getInputs()
+
+        point0 = [float(i) for i in point0]
+        vector = [float(i) for i in vector]
+
+        print(self.settings.x_bounds)
+        mult = min([_get_multiplier(vector[0], point0[0], "X"), _get_multiplier(vector[1], point0[1], "Y"), _get_multiplier(vector[2], point0[2], "Z")])
+        vector = [i * mult for i in vector]
+        end_point = [point_coor + vector_coor for point_coor, vector_coor in zip(point0, vector)]
+    
+        mult = min([_get_multiplier(-vector[0], point0[0], "X"), _get_multiplier(-vector[1], point0[1], "Y"), _get_multiplier(-vector[2], point0[2], "Z")])
+        vector = [i * mult for i in vector]
+        start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point0, vector)]
+
+        line = pv.Line(start_point, end_point)
+        self.plotter.add_mesh(line, color='black', line_width=5)
+        self.text_box.append(f"Line by vector: {point0}, {vector}")
+        self.plotter.reset_camera()
+
     def add_sphere(self):
         dialog = SphereDialog()
         centre = []
