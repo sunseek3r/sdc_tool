@@ -10,8 +10,8 @@ from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from figure_classes import *
-from inputs import SphereDialog
-
+from inputs import SphereDialog, LineDialog
+from settings import Settings
 
 # Function to create and display the 3D plot
 
@@ -37,7 +37,7 @@ TODO:
 class Window(MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self, parent=None)
-
+        self.settings = Settings()
  
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
@@ -79,7 +79,20 @@ class Window(MainWindow):
     
 
     def add_line(self):
-        pass
+        dialog = LineDialog()
+        point1 = []
+        if dialog.exec():
+            point1 = dialog.getInputs()
+        
+        dialog = LineDialog()
+        point2 = []
+        if dialog.exec():
+            point2 = dialog.getInputs()
+
+        line = pv.Line(point1, point2)
+        self.plotter.add_mesh(line)
+        self.text_box.append(f"Line: {point1}, {point2}")
+        self.plotter.reset_camera()
     
     def add_sphere(self):
         dialog = SphereDialog()
@@ -93,6 +106,8 @@ class Window(MainWindow):
             self.plotter.add_mesh(sphere, opacity=0.5, show_edges=False)
             self.text_box.append(f"Sphere: centre:{centre}, radius:{radius}")
             self.plotter.reset_camera()
+
+        self.settings.update_bounds(sphere.bounds)
         
 
 if __name__ == '__main__':
