@@ -6,12 +6,14 @@ os.environ["QT_API"] = "pyqt5"
 from qtpy import QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLineEdit
 from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from figure_classes import *
-from inputs import SphereDialog, PointDialog
+from inputs import SphereDialog, PointDialog, FunctionDialog
 from settings import Settings
+from instruments import compute_points
 
 # Function to create and display the 3D plot
 
@@ -78,6 +80,11 @@ class Window(MainWindow):
         surface_button.clicked.connect(self.add_surface)
         left_layout.addWidget(surface_button)
         
+        curve_button = QPushButton("Curve", self)
+        curve_button.clicked.connect(self.add_curve)
+        left_layout.addWidget(curve_button)
+
+
         self.plotter.show_grid()
 
 
@@ -131,7 +138,7 @@ class Window(MainWindow):
 
         if dialog.exec():
             point_c = dialog.getInputs()
-        
+
         dialog = PointDialog("Input vector N")
 
         vector_n = []
@@ -141,8 +148,7 @@ class Window(MainWindow):
 
         if len(point_c) != 3 or len(vector_n) != 3:
             return
-        
-
+              
         A = vector_n[0]
         B = vector_n[1]
         C = vector_n[2]
@@ -153,10 +159,6 @@ class Window(MainWindow):
 
         x, y = np.meshgrid(x, y)
 
-        x0 = point_c[0]
-        y0 = point_c[1]
-        z0 = point_c[2]
-
         z = np.array([A*i + B * j + D for i,j in zip(x, y)])
         z = z / C
 
@@ -164,6 +166,24 @@ class Window(MainWindow):
         self.plotter.add_mesh(grid, opacity=0.7)
         self.text_box.append("surface")
         self.plotter.reset_camera()
+
+    def add_curve(self):
+        dialog = FunctionDialog("Input a function in form i.e. \"f(z)=2*x + 3*y\"")
+        func = ""
+        if dialog.exec():
+            func = dialog.getInputs()
+
+        print(func)
+
+        if func != "":
+            x, y, z = compute_points(func, self.settings.x_bounds, self.settings.y_bounds)
+            print(type(x), type(y), type(z))
+            grid = pv.StructuredGrid(x, y, z)
+            self.plotter.add_mesh(grid, color='blue', line_width=5)
+            self.text_box.append(func)
+            self.plotter.reset_camera()
+
+
         
 
 if __name__ == '__main__':

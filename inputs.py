@@ -44,3 +44,22 @@ class PointDialog(QDialog):
 
     def getInputs(self):
         return [float(i) for i in (self.x1.text(), self.y1.text(), self.z1.text())]
+    
+
+class FunctionDialog(QDialog):
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle(title)
+        self.function = QLineEdit(self)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self);
+
+        layout = QFormLayout(self)
+        layout.addRow("function", self.function)
+        layout.addWidget(buttonBox)
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def getInputs(self):
+        return self.function.text()
