@@ -1,75 +1,101 @@
 import sys
 
-# Setting the Qt bindings for QtPy
 import os
 os.environ["QT_API"] = "pyqt5"
 
 from qtpy import QtWidgets
-
-import numpy as np
-
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
+from PyQt5.QtCore import Qt
+from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
-from pyvistaqt import QtInteractor, MainWindow
-
+import numpy as np
 from figure_classes import *
+from inputs import SphereDialog
 
-line_fig = Line((0, 1, 2), (1, 3, -5))
 
-plots = [line_fig, ]
+# Function to create and display the 3D plot
 
-class MyMainWindow(MainWindow):
 
-    def __init__(self, parent=None, show=True):
-        QtWidgets.QMainWindow.__init__(self, parent)
+"""
+TODO:
+    !!!!!!!!!! CLEAR DOCUMENTATION !!!!!!!!!!!!!!!!!!!!
+    - create classes for different types of input:
+    1) Line
+    2) Curve
+    3) Plain
+    4) Rotational Figures
+    5) Conic Figures
+    6) Cillyndric Figures
+    - create input field
+    - Customization tool i.e. zalivka
+    - Intersections tool
+    - save to file
+    - animations
+"""
 
-        # create the frame
-        self.frame = QtWidgets.QFrame()
-        vlayout = QtWidgets.QVBoxLayout()
 
-        # add the pyvista interactor object
-        self.plotter = QtInteractor(self.frame)
-        vlayout.addWidget(self.plotter.interactor)
-        self.signal_close.connect(self.plotter.close)
+class Window(MainWindow):
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self, parent=None)
 
-        self.frame.setLayout(vlayout)
-        self.setCentralWidget(self.frame)
+ 
+        self.setWindowTitle("SDC Tool")
+        self.setGeometry(50, 50, 800, 600)
 
-        # simple menu to demo functions
-        mainMenu = self.menuBar()
-        fileMenu = mainMenu.addMenu('File')
-        exitButton = QtWidgets.QAction('Exit', self)
-        exitButton.setShortcut('Ctrl+Q')
-        exitButton.triggered.connect(self.close)
-        fileMenu.addAction(exitButton)
 
-        # allow adding a sphere
-        meshMenu = mainMenu.addMenu('Mesh')
-        self.add_sphere_action = QtWidgets.QAction('Add Sphere', self)
-        self.add_sphere_action.triggered.connect(self.add_sphere_btn)
-        meshMenu.addAction(self.add_sphere_action)
+        main_widget = QWidget(self)
+        main_layout = QHBoxLayout(main_widget)
 
-        self.add_line_action = QtWidgets.QAction('Add a Line', self)
-        self.add_line_action.triggered.connect(self.add_line)
-        meshMenu.addAction(self.add_line_action)
 
-        if show:
-            self.show()
+        left_widget = QWidget(main_widget)
+        left_layout = QVBoxLayout(left_widget)
+        left_widget.setMaximumWidth(300)
+        main_layout.addWidget(left_widget)
 
-    def add_sphere(self):
-        """ add a sphere to the pyqt frame """
-        sphere = pv.Sphere()
-        self.plotter.add_mesh(sphere, show_edges=True)
-        self.plotter.reset_camera()
+        self.text_box = QTextEdit()
+        left_layout.addWidget(self.text_box)
+
+        
+        right_widget = QWidget(main_widget)
+        right_layout = QVBoxLayout(right_widget)
+        main_layout.addWidget(right_widget)
+        
+
+
+        self.plotter = QtInteractor()
+        right_layout.addWidget(self.plotter)
+
+
+        sphere_button = QPushButton("Sphere", self)
+        sphere_button.clicked.connect(self.add_sphere)
+        left_layout.addWidget(sphere_button)
+
+        self.plotter.show_grid()
+
+
+        self.setCentralWidget(main_widget)
+        self.show()
+
+    
 
     def add_line(self):
-        """ add a line to the pyqt frame """
-
-        global line_fig
-        line = pv.Line(line_fig.d1, line_fig.d2)
-        self.plotter.add_mesh(line)
-        self.plotter.reset_camera()
+        pass
+    
+    def add_sphere(self):
+        dialog = SphereDialog()
+        centre = []
+        if dialog.exec():
+            centre = dialog.getInputs()
+        centre = [float(i) for i in centre]
+        radius, ok = QInputDialog.getDouble(self, "Input", "Radius")
+        if ok:
+            sphere = pv.Sphere(radius, centre)
+            self.plotter.add_mesh(sphere, opacity=0.5, show_edges=False)
+            self.text_box.append(f"Sphere: centre:{centre}, radius:{radius}")
+            self.plotter.reset_camera()
+        
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    window = MyMainWindow()
+    app = QApplication(sys.argv)
+    window = Window()
     sys.exit(app.exec_())
