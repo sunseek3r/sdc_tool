@@ -20,6 +20,8 @@ class Line():
         z_values = [self.d1[2], self.d2[2]]
 
 
+
+
         
 
 

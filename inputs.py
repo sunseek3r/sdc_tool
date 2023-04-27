@@ -60,6 +60,28 @@ class FunctionDialog(QDialog):
 
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-
+ 
     def getInputs(self):
         return self.function.text()
+
+class VectorLineDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.m = QLineEdit(self)
+        self.n = QLineEdit(self)
+        self.p = QLineEdit(self)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self);
+
+        layout = QFormLayout(self)
+        layout.addRow("M", self.m)
+        layout.addRow("N", self.n)
+        layout.addRow("P", self.p)
+        layout.addWidget(buttonBox)
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def getInputs(self):
+        return (self.m.text(), self.n.text(), self.p.text())
+
