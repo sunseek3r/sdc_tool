@@ -70,6 +70,10 @@ class Window(MainWindow):
         sphere_button.clicked.connect(self.add_sphere)
         left_layout.addWidget(sphere_button)
 
+        line_button = QPushButton("Line", self)
+        line_button.clicked.connect(self.add_line)
+        left_layout.addWidget(line_button)
+        
         self.plotter.show_grid()
 
 
@@ -79,18 +83,21 @@ class Window(MainWindow):
     
 
     def add_line(self):
-        dialog = LineDialog()
+        dialog = LineDialog(1)
         point1 = []
         if dialog.exec():
             point1 = dialog.getInputs()
         
-        dialog = LineDialog()
+        dialog = LineDialog(2)
         point2 = []
         if dialog.exec():
             point2 = dialog.getInputs()
 
+        point1 = [float(i) for i in point1]
+        point2 = [float(i) for i in point2]
+
         line = pv.Line(point1, point2)
-        self.plotter.add_mesh(line)
+        self.plotter.add_mesh(line, color='black', line_width=5)
         self.text_box.append(f"Line: {point1}, {point2}")
         self.plotter.reset_camera()
     
@@ -108,6 +115,9 @@ class Window(MainWindow):
             self.plotter.reset_camera()
 
         self.settings.update_bounds(sphere.bounds)
+
+    def add_surface(self):
+        pass
         
 
 if __name__ == '__main__':

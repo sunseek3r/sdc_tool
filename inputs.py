@@ -23,7 +23,7 @@ class SphereDialog(QDialog):
     
 
 class LineDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, number, parent=None):
         super().__init__(parent)
 
         self.x1 = QLineEdit(self)
@@ -32,9 +32,9 @@ class LineDialog(QDialog):
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self);
 
         layout = QFormLayout(self)
-        layout.addRow("X1", self.x1)
-        layout.addRow("Y1", self.y1)
-        layout.addRow("Z1", self.z1)
+        layout.addRow(f"X{number}", self.x1)
+        layout.addRow(f"Y{number}", self.y1)
+        layout.addRow(f"Z{number}", self.z1)
         layout.addWidget(buttonBox)
 
         buttonBox.accepted.connect(self.accept)

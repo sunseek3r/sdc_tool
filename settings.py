@@ -2,9 +2,9 @@
 
 class Settings():
     def __init__(self):
-        self.x_bounds = [0, 0]
-        self.y_bounds = [0, 0]
-        self.z_bounds = [0, 0]
+        self.x_bounds = [-100, 100]
+        self.y_bounds = [-100, 100]
+        self.z_bounds = [-100, 100]
 
     def update_bounds(self, bounds):
         "Input: Bounds from mesh, first two elements are X bounds, second: Y bounds, third: z bounds"
