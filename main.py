@@ -139,8 +139,8 @@ class Window(MainWindow):
                 print((bounds[1] - anchor_coor) / directional_coor)
                 return (bounds[1] - anchor_coor) / directional_coor
                 
-    
-        dialog = PointDialog(0)
+        dialog = PointDialog("Input point 0")
+
         point0 = []
         if dialog.exec():
             point0 = dialog.getInputs()
