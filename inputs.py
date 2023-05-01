@@ -85,3 +85,25 @@ class VectorLineDialog(QDialog):
     def getInputs(self):
         return (self.m.text(), self.n.text(), self.p.text())
 
+class ParameterDialog(QDialog):
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle(title)
+        self.m = QLineEdit(self)
+        self.n = QLineEdit(self)
+        self.p = QLineEdit(self)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self);
+
+        layout = QFormLayout(self)
+        layout.addRow("x(t)=", self.m)
+        layout.addRow("y(t)=", self.n)
+        layout.addRow("z(t)=", self.p)
+        layout.addWidget(buttonBox)
+
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+    def getInputs(self):
+        return (self.m.text(), self.n.text(), self.p.text())
+

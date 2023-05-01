@@ -24,3 +24,23 @@ def compute_points(function_str, x_range, y_range):
     Z = f(x_values, y_values)
 
     return x_values, y_values, Z
+
+def compute_parameter(functions):
+    t = symbols('t')
+    ts = np.arange(-50, 50, 0.1)
+    f_x = lambdify(t, functions[0], 'numpy')
+    f_y = lambdify(t, functions[1], 'numpy')
+    f_z = lambdify(t, functions[2], 'numpy')
+
+    x_values = f_x(ts)
+    y_values = f_y(ts)
+    z_values = f_z(ts)
+
+    for i in range(len(x_values)):
+        if (x_values[i] > 1000 or x_values[i] < -1000 or y_values[i] > 1000 or y_values[i] < -1000 
+            or z_values[i] > 1000 or z_values[i] < -1000):
+                x_values.pop(i)
+                y_values.pop(i)
+                z_values.pop(i)
+
+    return x_values, y_values, z_values

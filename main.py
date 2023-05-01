@@ -11,9 +11,9 @@ from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from figure_classes import *
-from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog
+from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points
+from instruments import compute_points, compute_parameter
 
 # Function to create and display the 3D plot
 
@@ -64,7 +64,7 @@ class Window(MainWindow):
         
 
 
-        self.plotter = QtInteractor()
+        self.plotter = BackgroundPlotter()
         right_layout.addWidget(self.plotter)
 
 
@@ -89,7 +89,9 @@ class Window(MainWindow):
         curve_button.clicked.connect(self.add_curve)
         left_layout.addWidget(curve_button)
 
-
+        parameters_button = QPushButton("Curve by parameter", self)
+        parameters_button.clicked.connect(self.add_curve_by_t)
+        left_layout.addWidget(parameters_button)
 
         self.plotter.show_grid()
 
@@ -138,7 +140,7 @@ class Window(MainWindow):
                 return (bounds[1] - anchor_coor) / directional_coor
                 
     
-        dialog = LineDialog(0)
+        dialog = PointDialog(0)
         point0 = []
         if dialog.exec():
             point0 = dialog.getInputs()
@@ -215,7 +217,7 @@ class Window(MainWindow):
         z = z / C
 
         grid = pv.StructuredGrid(x, y, z)
-        self.plotter.add_mesh(grid, opacity=0.7)
+        self.plotter.add_mesh(grid, opacity=0.7, color='red')
         self.text_box.append("surface")
         self.plotter.reset_camera()
 
@@ -233,6 +235,19 @@ class Window(MainWindow):
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='blue', line_width=5)
             self.text_box.append(func)
+            self.plotter.reset_camera()
+
+    def add_curve_by_t(self):
+        dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
+        functions = []
+        if dialog.exec():
+            functions = dialog.getInputs()
+
+            x,y,z = compute_parameter(functions)
+
+            grid = pv.StructuredGrid(x, y, z)
+            self.plotter.add_mesh(grid, color='green', line_width=5)
+            self.text_box.append('\n'.join(functions))
             self.plotter.reset_camera()
 
 
