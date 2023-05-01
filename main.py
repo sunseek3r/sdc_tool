@@ -93,9 +93,13 @@ class Window(MainWindow):
         parameters_button.clicked.connect(self.add_curve_by_t)
         left_layout.addWidget(parameters_button)
 
-        Conic_curve_button = QPushButton("Conic curve", self)
-        Conic_curve_button.clicked.connect(self.add_conic_surface)
-        left_layout.addWidget(Conic_curve_button)
+        conic_curve_button = QPushButton("Conic surface", self)
+        conic_curve_button.clicked.connect(self.add_conic_surface)
+        left_layout.addWidget(conic_curve_button)
+
+        cylindrical_curve_button = QPushButton("Cylindrical surface", self)
+        cylindrical_curve_button.clicked.connect(self.add_cylindrical_surface)
+        left_layout.addWidget(cylindrical_curve_button)
 
         self.plotter.show_grid()
 
@@ -297,7 +301,33 @@ class Window(MainWindow):
             self.text_box.append('\n'.join(functions))
             self.plotter.reset_camera()
 
-        
+    def add_cylindrical_surface(self):
+        dialog = VectorLineDialog()
+        vector = []
+        if dialog.exec():
+            vector = dialog.getInputs()
+
+        vector = [float(i) for i in vector]
+
+        dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
+        functions = []
+        if dialog.exec():
+            functions = dialog.getInputs()
+            curve_x, curve_y, curve_z = compute_parameter(functions)
+            
+            x = np.array([])
+            y = np.array([])
+            z = np.array([])
+
+            for i, j, k in zip(curve_x, curve_y, curve_z):
+                x = np.append(x, [i, (i + vector[0])])
+                y = np.append(y, [j, (j + vector[1])])
+                z = np.append(z, [k, (k + vector[2])])
+            grid = pv.StructuredGrid(x, y, z)
+            self.plotter.add_mesh(grid, color='yellow', line_width=5)
+            self.text_box.append('\n'.join(functions))
+            self.plotter.reset_camera()
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = Window()
