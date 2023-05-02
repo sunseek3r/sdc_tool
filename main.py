@@ -93,6 +93,14 @@ class Window(MainWindow):
         parameters_button.clicked.connect(self.add_curve_by_t)
         left_layout.addWidget(parameters_button)
 
+        conic_curve_button = QPushButton("Conic surface", self)
+        conic_curve_button.clicked.connect(self.add_conic_surface)
+        left_layout.addWidget(conic_curve_button)
+
+        cylindrical_curve_button = QPushButton("Cylindrical surface", self)
+        cylindrical_curve_button.clicked.connect(self.add_cylindrical_surface)
+        left_layout.addWidget(cylindrical_curve_button)
+
         self.plotter.show_grid()
 
 
@@ -136,7 +144,6 @@ class Window(MainWindow):
             if directional_coor < 0:
                 return (bounds[0] - anchor_coor) / directional_coor
             else:
-                print((bounds[1] - anchor_coor) / directional_coor)
                 return (bounds[1] - anchor_coor) / directional_coor
                 
         dialog = PointDialog("Input point 0")
@@ -153,7 +160,6 @@ class Window(MainWindow):
         point0 = [float(i) for i in point0]
         vector = [float(i) for i in vector]
 
-        print(self.settings.x_bounds)
         mult = min([_get_multiplier(vector[0], point0[0], "X"), _get_multiplier(vector[1], point0[1], "Y"), _get_multiplier(vector[2], point0[2], "Z")])
         vector = [i * mult for i in vector]
         end_point = [point_coor + vector_coor for point_coor, vector_coor in zip(point0, vector)]
@@ -238,20 +244,89 @@ class Window(MainWindow):
             self.plotter.reset_camera()
 
     def add_curve_by_t(self):
+        
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
 
-            x,y,z = compute_parameter(functions)
-
+            x, y, z = compute_parameter(functions)
+            
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
             self.text_box.append('\n'.join(functions))
             self.plotter.reset_camera()
 
+    def add_conic_surface(self):
+        #def _get_multiplier(directional_coor, anchor_coor, coor_type):
+            #if coor_type == "X":
+               # bounds = self.settings.x_bounds
+            #elif coor_type == "Y":
+                #bounds = self.settings.y_bounds
+            #elif coor_type == "Z":
+                #bounds = self.settings.z_bounds
+            
+            #if directional_coor == 0:
+                #return 1e9 # cannot extend with this coordinate => return infinity
 
-        
+            #if directional_coor < 0:
+                #return (bounds[0] - anchor_coor) / directional_coor
+            #else:
+                #return (bounds[1] - anchor_coor) / directional_coor
+            
+        dialog = PointDialog("Input point 0")
+        point_0 = []
+        if dialog.exec():
+            point_0 = dialog.getInputs()
+
+        dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
+        functions = []
+        if dialog.exec():
+            functions = dialog.getInputs()
+
+            curve_x, curve_y, curve_z = compute_parameter(functions)
+            
+            x = np.array([])
+            y = np.array([])
+            z = np.array([])
+            for i, j, k in zip(curve_x, curve_y, curve_z):
+                #mul_x = _get_multiplier(point_0[0] - i, i, "X")
+                #mul_y = _get_multiplier(point_0[1] - j, j, "Y")
+                #mul_z = _get_multiplier(point_0[2] - k, k, "Z")
+                x = np.append(x, [i, point_0[0]])
+                y = np.append(y, [j, point_0[1]])
+                z = np.append(z, [k, point_0[2]])
+            grid = pv.StructuredGrid(x, y, z)
+            self.plotter.add_mesh(grid, color='purple', line_width=5)
+            self.text_box.append('\n'.join(functions))
+            self.plotter.reset_camera()
+
+    def add_cylindrical_surface(self):
+        dialog = VectorLineDialog()
+        vector = []
+        if dialog.exec():
+            vector = dialog.getInputs()
+
+        vector = [float(i) for i in vector]
+
+        dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
+        functions = []
+        if dialog.exec():
+            functions = dialog.getInputs()
+            curve_x, curve_y, curve_z = compute_parameter(functions)
+            
+            x = np.array([])
+            y = np.array([])
+            z = np.array([])
+
+            for i, j, k in zip(curve_x, curve_y, curve_z):
+                x = np.append(x, [i, (i + vector[0])])
+                y = np.append(y, [j, (j + vector[1])])
+                z = np.append(z, [k, (k + vector[2])])
+            grid = pv.StructuredGrid(x, y, z)
+            self.plotter.add_mesh(grid, color='yellow', line_width=5)
+            self.text_box.append('\n'.join(functions))
+            self.plotter.reset_camera()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
