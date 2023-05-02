@@ -297,7 +297,7 @@ class Window(MainWindow):
                 y = np.append(y, [j, point_0[1]])
                 z = np.append(z, [k, point_0[2]])
             grid = pv.StructuredGrid(x, y, z)
-            self.plotter.add_mesh(grid, color='purple', line_width=5)
+            self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.75)
             self.text_box.append('\n'.join(functions))
             self.plotter.reset_camera()
 
@@ -324,7 +324,7 @@ class Window(MainWindow):
                 y = np.append(y, [j, (j + vector[1])])
                 z = np.append(z, [k, (k + vector[2])])
             grid = pv.StructuredGrid(x, y, z)
-            self.plotter.add_mesh(grid, color='yellow', line_width=5)
+            self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.75)
             self.text_box.append('\n'.join(functions))
             self.plotter.reset_camera()
 

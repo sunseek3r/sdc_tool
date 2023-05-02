@@ -22,7 +22,7 @@ def compute_points(function_str, x_range, y_range):
     y_values = np.arange(y_range[0], y_range[1], 0.1)
 
     Z = f(x_values, y_values)
-
+    
     return x_values, y_values, Z
 
 def compute_parameter(functions):
@@ -35,7 +35,7 @@ def compute_parameter(functions):
     x_values = f_x(ts)
     y_values = f_y(ts)
     z_values = f_z(ts)
-    mask = np.ones_like(x_values)
+    mask = np.ones_like(x_values, dtype=bool)
     to_delete = []
     for ind, (x,y,z) in enumerate(zip(x_values, y_values, z_values)):
         if (x > 100 or x < -100) or (y > 100 or y < -100) or (z > 100 or z < -100):
@@ -45,5 +45,5 @@ def compute_parameter(functions):
     x_values = x_values[mask]
     y_values = y_values[mask]
     z_values = z_values[mask]
-    
+
     return x_values, y_values, z_values
