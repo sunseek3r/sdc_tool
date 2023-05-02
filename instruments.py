@@ -35,12 +35,15 @@ def compute_parameter(functions):
     x_values = f_x(ts)
     y_values = f_y(ts)
     z_values = f_z(ts)
+    mask = np.ones_like(x_values)
+    to_delete = []
+    for ind, (x,y,z) in enumerate(zip(x_values, y_values, z_values)):
+        if (x > 100 or x < -100) or (y > 100 or y < -100) or (z > 100 or z < -100):
+            to_delete.append(ind)
 
-    for i in range(len(x_values)):
-        if (x_values[i] > 1000 or x_values[i] < -1000 or y_values[i] > 1000 or y_values[i] < -1000 
-            or z_values[i] > 1000 or z_values[i] < -1000):
-                x_values.pop(i)
-                y_values.pop(i)
-                z_values.pop(i)
-
+    mask[to_delete] = False
+    x_values = x_values[mask]
+    y_values = y_values[mask]
+    z_values = z_values[mask]
+    
     return x_values, y_values, z_values
