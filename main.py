@@ -3,17 +3,19 @@ import sys
 import os
 os.environ["QT_API"] = "pyqt5"
 
-from qtpy import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QListWidgetItem, QListWidget, QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLineEdit
 from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
-from figure_classes import *
+from figure_classes import Figure, Line, Surface
 from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points, compute_parameter
+from instruments import compute_points, compute_parameter, structured_grid_to_vtk_grid, get_bounds
+from scipy.spatial import cKDTree
+
 
 # Function to create and display the 3D plot
 
@@ -40,24 +42,41 @@ class Window(MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self, parent=None)
         self.settings = Settings()
- 
+    
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
+        self.meshes = []
 
         main_widget = QWidget(self)
         main_layout = QHBoxLayout(main_widget)
 
+        
 
         left_widget = QWidget(main_widget)
         left_layout = QVBoxLayout(left_widget)
         left_widget.setMaximumWidth(300)
         main_layout.addWidget(left_widget)
 
-        self.text_box = QTextEdit()
+        self.text_box = QListWidget(self)
+        self.text_box.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection
+        )
         left_layout.addWidget(self.text_box)
 
         
+        mainMenu = self.menuBar()
+        fileMenu = mainMenu.addMenu('File')
+        exitButton = QtWidgets.QAction('Exit', self)
+        exitButton.setShortcut('Ctrl+Q')
+        exitButton.triggered.connect(self.close)
+        fileMenu.addAction(exitButton)
+
+        tools_menu = mainMenu.addMenu('Tools')
+        intersect_button = QtWidgets.QAction('Intersection', self)
+        intersect_button.triggered.connect(self.intersect)
+        tools_menu.addAction(intersect_button)
+
         right_widget = QWidget(main_widget)
         right_layout = QVBoxLayout(right_widget)
         main_layout.addWidget(right_widget)
@@ -126,7 +145,8 @@ class Window(MainWindow):
 
         line = pv.Line(point1, point2)
         self.plotter.add_mesh(line, color='black', line_width=5)
-        self.text_box.append(f"Line: {point1}, {point2}")
+        self.meshes.append(Figure(line, type='line'))
+        self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
 
     def add_vector_line(self):
@@ -170,7 +190,8 @@ class Window(MainWindow):
 
         line = pv.Line(start_point, end_point)
         self.plotter.add_mesh(line, color='black', line_width=5)
-        self.text_box.append(f"Line by vector: {point0}, {vector}")
+        self.meshes.append(Figure(line, 'line'))
+        self.text_box.addItem(QListWidgetItem(f"Line by vector: {point0}, {vector}"))
         self.plotter.reset_camera()
 
     def add_sphere(self):
@@ -186,9 +207,9 @@ class Window(MainWindow):
         if ok and radius != 0:
             sphere = pv.Sphere(radius, centre)
             self.plotter.add_mesh(sphere, opacity=0.5, show_edges=False)
-            self.text_box.append(f"Sphere: centre:{centre}, radius:{radius}")
+            self.meshes.append(Figure(sphere, 'sphere'))
+            self.text_box.addItem(QListWidgetItem(f"Sphere: centre:{centre}, radius:{radius}"))
             self.plotter.reset_camera()
-
             self.settings.update_bounds(sphere.bounds)
 
     def add_surface(self):
@@ -197,14 +218,14 @@ class Window(MainWindow):
         point_c = []
 
         if dialog.exec():
-            point_c = dialog.getInputs()
+            point_c = [float(i) for i in dialog.getInputs()]
 
         dialog = PointDialog("Input vector N")
 
         vector_n = []
 
         if dialog.exec():
-            vector_n = dialog.getInputs()
+            vector_n = [float(i) for i in dialog.getInputs()]
 
         if len(point_c) != 3 or len(vector_n) != 3:
             return
@@ -212,19 +233,17 @@ class Window(MainWindow):
         A = vector_n[0]
         B = vector_n[1]
         C = vector_n[2]
-        D = -sum([i*j for i,j in zip(point_c, vector_n)])
+        D = -(point_c[0] * A + point_c[1] * B + point_c[2] * C)
 
-        x = np.arange(self.settings.x_bounds[0], self.settings.x_bounds[1], 0.1)
-        y = np.arange(self.settings.y_bounds[0], self.settings.y_bounds[1], 0.1)
+        x = np.arange(self.settings.x_bounds[0], self.settings.x_bounds[1], 0.3)
+        y = np.arange(self.settings.y_bounds[0], self.settings.y_bounds[1], 0.3)
 
         x, y = np.meshgrid(x, y)
-
-        z = np.array([A*i + B * j + D for i,j in zip(x, y)])
-        z = z / C
-
+        z = -(A * x + B * y + D) / C
         grid = pv.StructuredGrid(x, y, z)
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
-        self.text_box.append("surface")
+        self.meshes.append(Surface(A, B, C, D, grid))
+        self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
     def add_curve(self):
@@ -240,7 +259,8 @@ class Window(MainWindow):
             print(type(x), type(y), type(z))
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='blue', line_width=5)
-            self.text_box.append(func)
+            self.meshes.append(Figure(grid, 'curve'))
+            self.text_box.addItem(QListWidgetItem(func))
             self.plotter.reset_camera()
 
     def add_curve_by_t(self):
@@ -254,7 +274,8 @@ class Window(MainWindow):
             
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
-            self.text_box.append('\n'.join(functions))
+            self.meshes.append(Figure(grid, 'curve'))
+            self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
     def add_conic_surface(self):
@@ -297,8 +318,9 @@ class Window(MainWindow):
                 y = np.append(y, [j, point_0[1]])
                 z = np.append(z, [k, point_0[2]])
             grid = pv.StructuredGrid(x, y, z)
-            self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.75)
-            self.text_box.append('\n'.join(functions))
+            self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+            self.meshes.append(Figure(grid, 'Conic Surface'))
+            self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
     def add_cylindrical_surface(self):
@@ -324,9 +346,42 @@ class Window(MainWindow):
                 y = np.append(y, [j, (j + vector[1])])
                 z = np.append(z, [k, (k + vector[2])])
             grid = pv.StructuredGrid(x, y, z)
-            self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.75)
-            self.text_box.append('\n'.join(functions))
+            self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
+            self.meshes.append(Figure(grid, 'Cylindrical Surface'))
+            self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
+    
+    def intersect(self):
+        items = self.text_box.selectedIndexes()
+
+        indexes = [i.row() for i in items]
+        
+        selected_meshes = [val for ind,val in enumerate(self.meshes) if ind in indexes]
+
+        if (len(selected_meshes) != 2):
+            return
+
+        grid_1 = selected_meshes[0]
+        grid_2 = selected_meshes[1]
+        
+        if (grid_2.fig_type == 'Surface'):
+            grid_1, grid_2 = grid_2, grid_1
+
+        A = grid_1.A
+        B = grid_1.B
+        C = grid_1.C
+        D = grid_1.D
+        
+        points = grid_2.mesh.points
+        overlap_points = []
+        delta = 1e-1
+        for point in points:
+            if np.abs(A*point[0] + B*point[1] + C*point[2] + D) < delta:
+                overlap_points.append(point)
+
+        intersection = pv.PolyData(overlap_points)
+        
+        self.plotter.add_mesh(intersection, color='yellow', point_size=5)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

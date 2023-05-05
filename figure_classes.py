@@ -2,16 +2,22 @@
     A file for figure classes (look TODO in main.py)
 """
 
+class Figure():
+    def __init__(self, mesh, fig_type='Figure'):
+        self.mesh = mesh
+        self.fig_type = fig_type
 
-class Line():
+class Line(Figure):
     """
         This is a class for Line figure
     """
 
 
-    def __init__(self, d1, d2):
+    def __init__(self, d1, d2, mesh):
+        Figure.__init__(self, mesh)
         self.d1 = d1
         self.d2 = d2
+        self.type = 'Line'
 
 
     def draw(self, ax):
@@ -20,8 +26,13 @@ class Line():
         z_values = [self.d1[2], self.d2[2]]
 
 
-
-
-        
+class Surface(Figure):
+    def __init__(self, A, B, C, D, mesh):
+        Figure.__init__(self, mesh)
+        self.A = A
+        self.B = B
+        self.C = C
+        self.D = D
+        self.type = 'Surface'
 
 
