@@ -83,7 +83,11 @@ class Window(MainWindow):
         
 
 
+
         self.plotter = BackgroundPlotter(show=False)
+
+
+
         right_layout.addWidget(self.plotter)
 
         self.addToolBar(self.plotter.default_camera_tool_bar)
