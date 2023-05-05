@@ -381,7 +381,7 @@ class Window(MainWindow):
 
         intersection = pv.PolyData(overlap_points)
         
-        self.plotter.add_mesh(intersection, color='yellow', point_size=5)
+        self.plotter.add_mesh(intersection, color='yellow', point_size=10)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
