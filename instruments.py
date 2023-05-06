@@ -28,7 +28,7 @@ def compute_points(function_str, x_range, y_range):
 
 def compute_parameter(functions):
     t = symbols('t')
-    ts = np.arange(-50, 50, 0.1)
+    ts = np.arange(-50, 50, 0.25)
     f_x = lambdify(t, functions[0], 'numpy')
     f_y = lambdify(t, functions[1], 'numpy')
     f_z = lambdify(t, functions[2], 'numpy')
@@ -60,3 +60,19 @@ def structured_grid_to_vtk_grid(grid):
 def get_bounds(grid):
     xmin, xmax, ymin, ymax, zmin, zmax = grid.bounds
     return np.array([[xmin, xmax], [ymin, ymax], [zmin, zmax]])
+
+
+
+def get_rotational_matrix(theta, vector):
+    u_x = vector[0]
+    u_y = vector[1]
+    u_z = vector[2]
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+    R = np.array([
+        [cos + (u_x**2)*(1-cos), u_x*u_y*(1-cos) - u_z * sin, u_x*u_z*(1-cos) + u_z * sin],
+        [u_y*u_x*(1-cos) + u_z * sin, cos + (u_y**2)*(1-cos), u_y*u_z*(1-cos) - u_z * sin],
+        [u_z*u_x*(1-cos) - u_z * sin, u_z * u_y*(1-cos) + u_z*sin, cos + (u_z**2)*(1-cos)]
+    ])
+
+    return R

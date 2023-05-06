@@ -83,7 +83,7 @@ class VectorLineDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
 
     def getInputs(self):
-        return (self.m.text(), self.n.text(), self.p.text())
+        return [float(i) for i in (self.m.text(), self.n.text(), self.p.text())]
 
 class ParameterDialog(QDialog):
     def __init__(self, title, parent=None):

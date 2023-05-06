@@ -13,7 +13,7 @@ import numpy as np
 from figure_classes import Figure, Line, Surface
 from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points, compute_parameter, structured_grid_to_vtk_grid, get_bounds
+from instruments import compute_points, compute_parameter, structured_grid_to_vtk_grid, get_bounds, get_rotational_matrix
 from scipy.spatial import cKDTree
 
 
@@ -129,6 +129,10 @@ class Window(MainWindow):
         cylindrical_curve_button = QPushButton("Cylindrical surface", self)
         cylindrical_curve_button.clicked.connect(self.add_cylindrical_surface)
         left_layout.addWidget(cylindrical_curve_button)
+
+        rotation_surface_button = QPushButton("Surface of revolution", self)
+        rotation_surface_button.clicked.connect(self.add_surface_revolution)
+        left_layout.addWidget(rotation_surface_button)
 
         self.plotter.show_grid()
 
@@ -355,6 +359,7 @@ class Window(MainWindow):
                 x = np.append(x, [i, (i + vector[0])])
                 y = np.append(y, [j, (j + vector[1])])
                 z = np.append(z, [k, (k + vector[2])])
+
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.meshes.append(Figure(grid, 'Cylindrical Surface'))
@@ -392,6 +397,35 @@ class Window(MainWindow):
         intersection = pv.PolyData(overlap_points)
         
         self.plotter.add_mesh(intersection, color='yellow', point_size=10)
+
+    def add_surface_revolution(self):
+        dialog1 = PointDialog("Input point 0")
+        dialog2 = VectorLineDialog()
+        point_0 = []
+        vector_n = []
+        if dialog1.exec():
+            point_0 = dialog1.getInputs()
+        if dialog2.exec():
+            vector_n = dialog2.getInputs()
+
+        dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
+        functions = []
+        if dialog.exec():
+            functions = dialog.getInputs()
+            x_g, y_g, z_g = compute_parameter(functions)
+
+            points = []
+            for theta in range(360):
+                R = get_rotational_matrix(theta, vector_n)
+                for x, y, z in zip(x_g, y_g, z_g):
+                    points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
+            
+            surface = pv.PolyData(points)
+            self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
+            self.meshes.append(Figure(surface, 'Surface of revolution'))
+            self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
