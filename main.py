@@ -143,23 +143,48 @@ class Window(MainWindow):
     
 
     def add_line(self):
+        def _get_multiplier(directional_coor, anchor_coor, coor_type):
+            if coor_type == "X":
+                bounds = self.settings.x_bounds
+            elif coor_type == "Y":
+                bounds = self.settings.y_bounds
+            elif coor_type == "Z":
+                bounds = self.settings.z_bounds
+            
+            if directional_coor == 0:
+                return 1e9 # cannot extend with this coordinate => return infinity
+
+            if directional_coor < 0:
+                return (bounds[0] - anchor_coor) / directional_coor
+            else:
+                return (bounds[1] - anchor_coor) / directional_coor
+                
         dialog = PointDialog("Input point 1")
         point1 = []
         if dialog.exec():
             point1 = dialog.getInputs()
         
-        dialog = PointDialog("Input point 2")
+        dialog = PointDialog('Input point 2')
         point2 = []
         if dialog.exec():
             point2 = dialog.getInputs()
-        if len(point1) != 3 or len(point2) != 3:
-            return
+
         point1 = [float(i) for i in point1]
         point2 = [float(i) for i in point2]
+        vector = [float(j - i) for i, j in zip(point1, point2)]
 
-        line = pv.Line(point1, point2)
+        mult = min([_get_multiplier(vector[0], point1[0], "X"), _get_multiplier(vector[1], point1[1], "Y"), _get_multiplier(vector[2], point1[2], "Z")])
+        vector = [i * mult for i in vector]
+        end_point = [point_coor + vector_coor for point_coor, vector_coor in zip(point1, vector)]
+    
+        mult = min([_get_multiplier(-vector[0], point1[0], "X"), _get_multiplier(-vector[1], point1[1], "Y"), _get_multiplier(-vector[2], point1[2], "Z")])
+        vector = [i * mult for i in vector]
+        start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point1, vector)]
+
+        line = pv.Line(start_point, end_point)
+        
         self.plotter.add_mesh(line, color='black', line_width=5)
-        self.meshes.append(Figure(line, type='line'))
+        self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
 
