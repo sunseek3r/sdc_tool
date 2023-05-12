@@ -15,6 +15,7 @@ from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, 
 from settings import Settings
 from instruments import compute_points, compute_parameter, structured_grid_to_vtk_grid, get_bounds, get_rotational_matrix
 from scipy.spatial import cKDTree
+import time
 
 
 # Function to create and display the 3D plot
@@ -445,10 +446,29 @@ class Window(MainWindow):
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
             
+            self.animate(points)
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
             self.meshes.append(Figure(surface, 'Surface of revolution'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+
+    def animate(self, points):
+        
+        animation_plotter = pv.Plotter()
+        animation_plotter.open_gif('points.gif')
+        
+        step = 1000
+
+        for i in range(0, len(points) - step, step):
+            poly = pv.PolyData(points[i:i+step])
+            
+            animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
+
+            animation_plotter.render()
+            animation_plotter.write_frame()
+
+        #animation_plotter.close()
+            
 
 
 
