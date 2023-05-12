@@ -23,6 +23,7 @@ class SphereDialog(QDialog):
     def getInputs(self):
         return (self.x1.text(), self.y1.text(), self.z1.text())
 
+#Клас діалогового вікна для точки
 class PointDialog(QDialog):
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -42,10 +43,11 @@ class PointDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
+    #Функція, що повертає введені користувачем дані
     def getInputs(self):
         return [float(i) for i in (self.x1.text(), self.y1.text(), self.z1.text())]
     
-
+#Клас діалогового вікна для функції
 class FunctionDialog(QDialog):
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -61,9 +63,11 @@ class FunctionDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
  
+    #Функція, що повертає введені користувачем дані
     def getInputs(self):
         return self.function.text()
 
+#Клас діалогового вікна для вектора
 class VectorLineDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -82,9 +86,11 @@ class VectorLineDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
+    #Функція, що повертає введені користувачем дані
     def getInputs(self):
         return [float(i) for i in (self.m.text(), self.n.text(), self.p.text())]
 
+#Клас діалогового вікна для параметричної функції
 class ParameterDialog(QDialog):
     def __init__(self, title, parent=None):
         super().__init__(parent)
@@ -104,6 +110,6 @@ class ParameterDialog(QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
+    #Функція, що повертає введені користувачем дані
     def getInputs(self):
         return (self.m.text(), self.n.text(), self.p.text())
-
