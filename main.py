@@ -40,10 +40,16 @@ TODO:
 
 
 class Window(MainWindow):
+    
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self, parent=None)
+        self.temp_line = 0
+        self.temp_surface = 0 
+        self.temp_curve = 0 
+        self.temp_cylindric = 0 
+        self.temp_conic = 0 
+        self.temp_surface_of_revolution = 0
         self.settings = Settings()
-    
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
@@ -66,17 +72,10 @@ class Window(MainWindow):
         left_layout.addWidget(self.text_box)
 
         
-        mainMenu = self.menuBar()
-        fileMenu = mainMenu.addMenu('File')
-        exitButton = QtWidgets.QAction('Exit', self)
-        exitButton.setShortcut('Ctrl+Q')
-        exitButton.triggered.connect(self.close)
-        fileMenu.addAction(exitButton)
+        
+     
 
-        tools_menu = mainMenu.addMenu('Tools')
-        intersect_button = QtWidgets.QAction('Intersection', self)
-        intersect_button.triggered.connect(self.intersect)
-        tools_menu.addAction(intersect_button)
+        
 
         right_widget = QWidget(main_widget)
         right_layout = QVBoxLayout(right_widget)
@@ -93,7 +92,12 @@ class Window(MainWindow):
 
         self.addToolBar(self.plotter.default_camera_tool_bar)
         self.addToolBar(self.plotter.saved_cameras_tool_bar)
-     
+        self.setMenuBar(self.plotter.main_menu)
+        mainMenu = self.menuBar()
+        tools_menu = mainMenu.addMenu('Custom Tools')
+        intersect_button = QtWidgets.QAction('Intersection', self)
+        intersect_button.triggered.connect(self.intersect)
+        tools_menu.addAction(intersect_button)
         
        
         
@@ -144,6 +148,7 @@ class Window(MainWindow):
     
 
     def add_line(self):
+        self.temp += 1
         def _get_multiplier(directional_coor, anchor_coor, coor_type):
             if coor_type == "X":
                 bounds = self.settings.x_bounds
@@ -183,8 +188,18 @@ class Window(MainWindow):
         start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point1, vector)]
 
         line = pv.Line(start_point, end_point)
-        
-        self.plotter.add_mesh(line, color='black', line_width=5)
+        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
+        self.plotter.add_mesh(line, color='black', line_width=5, label = "Line")
+        label = ["Line " + str(self.temp)]
+        self.plotter.add_point_labels(midlle_point,
+        label,
+        italic=True,
+        font_size=10,
+        point_color='black',
+        point_size=1,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
@@ -227,9 +242,19 @@ class Window(MainWindow):
         mult = min([_get_multiplier(-vector[0], point0[0], "X"), _get_multiplier(-vector[1], point0[1], "Y"), _get_multiplier(-vector[2], point0[2], "Z")])
         vector = [i * mult for i in vector]
         start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point0, vector)]
-
+        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
+        label = ["Line " + str(self.temp)]
         line = pv.Line(start_point, end_point)
         self.plotter.add_mesh(line, color='black', line_width=5)
+        self.plotter.add_point_labels(midlle_point,
+        label,
+        italic=True,
+        font_size=10,
+        point_color='black',
+        point_size=1,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line by vector: {point0}, {vector}"))
         self.plotter.reset_camera()
@@ -266,6 +291,7 @@ class Window(MainWindow):
 
         if dialog.exec():
             vector_n = [float(i) for i in dialog.getInputs()]
+            
 
         if len(point_c) != 3 or len(vector_n) != 3:
             return
@@ -282,7 +308,19 @@ class Window(MainWindow):
         z = -(A * x + B * y + D) / C
         grid = pv.StructuredGrid(x, y, z)
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
+        label = ["Line " + str(self.temp)]
         self.meshes.append(Surface(A, B, C, D, grid))
+        self.plotter.add_point_labels(point_c,
+        label,
+        italic=True,
+        font_size=20,
+        point_color='red',
+        point_size=20,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
+        arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
+        self.plotter.add_mesh(arrow, color='blue')
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
@@ -298,7 +336,10 @@ class Window(MainWindow):
             x, y, z = compute_points(func, self.settings.x_bounds, self.settings.y_bounds)
             print(type(x), type(y), type(z))
             grid = pv.StructuredGrid(x, y, z)
+          
+           
             self.plotter.add_mesh(grid, color='blue', line_width=5)
+            
             self.meshes.append(Figure(grid, 'curve'))
             self.text_box.addItem(QListWidgetItem(func))
             self.plotter.reset_camera()
@@ -314,6 +355,17 @@ class Window(MainWindow):
             
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
+            array = [x[0],y[0],z[0]]
+            label = ["Line " + str(self.temp)]
+            self.plotter.add_point_labels(array,
+            label,
+            italic=True,
+            font_size=20,
+            point_color='red',
+            point_size=20,
+            render_points_as_spheres=True,
+            always_visible=True,
+            shadow=True)
             self.meshes.append(Figure(grid, 'curve'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -359,6 +411,7 @@ class Window(MainWindow):
                 z = np.append(z, [k, point_0[2]])
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+            
             self.meshes.append(Figure(grid, 'Conic Surface'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -389,6 +442,13 @@ class Window(MainWindow):
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.meshes.append(Figure(grid, 'Cylindrical Surface'))
+            array = [x[0],y[0],z[0]]
+            curve_array = [curve_x[0],curve_y[0],curve_z[0]]
+            label_c = ["Point с " + str(self.temp_cylindric)]
+            self.plotter.add_point_labels(array,label_c,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+            label_p = ["Point p " + str(self.temp_cylindric)]
+            self.plotter.add_point_labels(curve_array,label_p,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
     
