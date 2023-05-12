@@ -76,9 +76,9 @@ def get_rotational_matrix(theta, vector):
     cos = np.cos(theta)
     sin = np.sin(theta)
     R = np.array([
-        [cos + (u_x**2)*(1-cos), u_x*u_y*(1-cos) - u_z * sin, u_x*u_z*(1-cos) + u_z * sin],
-        [u_y*u_x*(1-cos) + u_z * sin, cos + (u_y**2)*(1-cos), u_y*u_z*(1-cos) - u_z * sin],
-        [u_z*u_x*(1-cos) - u_z * sin, u_z * u_y*(1-cos) + u_z*sin, cos + (u_z**2)*(1-cos)]
+        [cos + (u_x**2)*(1-cos), u_x*u_y*(1-cos) - u_z * sin, u_x*u_z*(1-cos) + u_y * sin],
+        [u_y*u_x*(1-cos) + u_z * sin, cos + (u_y**2)*(1-cos), u_y*u_z*(1-cos) - u_x * sin],
+        [u_z*u_x*(1-cos) - u_y * sin, u_z * u_y*(1-cos) + u_x*sin, cos + (u_z**2)*(1-cos)]
     ])
 
     return R

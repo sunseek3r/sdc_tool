@@ -191,6 +191,8 @@ class Window(MainWindow):
         vector = [i * mult for i in vector]
         start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point1, vector)]
 
+        midlle_point = [point2_coor - point1_coor for point1_coor, point2_coor in zip(start_point, end_point)]
+
         #будуємо лінію
         line = pv.Line(start_point, end_point)
         
@@ -472,6 +474,8 @@ class Window(MainWindow):
             point_0 = dialog1.getInputs()
         if dialog2.exec():
             vector_n = dialog2.getInputs()
+
+        vector_n = vector_n / np.linalg.norm(vector_n)
 
         #визиваємо діалогові вікна для вводу кривої
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
