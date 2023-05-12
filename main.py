@@ -17,6 +17,7 @@ from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, 
 from settings import Settings
 from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix
 from scipy.spatial import cKDTree
+import time
 
 
 # Function to create and display the 3D plot
@@ -41,12 +42,19 @@ TODO:
 
 #Клас головного вікна програми
 class Window(MainWindow):
+    
     def __init__(self):
         # Створюємо вікно
         QtWidgets.QMainWindow.__init__(self, parent=None)
-        self.settings = Settings()
-    
+        self.temp_line = 0
+        self.temp_surface = 0 
+        self.temp_curve = 0 
+        self.temp_cylindric = 0 
+        self.temp_conic = 0 
+        self.temp_surface_of_revolution = 0
+        self.settings = Settings() 
         #Задаємо назву та розміри вікна
+
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
@@ -94,6 +102,15 @@ class Window(MainWindow):
         #Додаємо тулбал для керування камерою
         self.addToolBar(self.plotter.default_camera_tool_bar)
         self.addToolBar(self.plotter.saved_cameras_tool_bar)
+
+        self.setMenuBar(self.plotter.main_menu)
+        mainMenu = self.menuBar()
+        tools_menu = mainMenu.addMenu('Custom Tools')
+        intersect_button = QtWidgets.QAction('Intersection', self)
+        intersect_button.triggered.connect(self.intersect)
+        tools_menu.addAction(intersect_button)
+        
+
         
         #Створюємо та додаємо до лівого віджета кнопку для побудови сфери
         sphere_button = QPushButton("Sphere", self)
@@ -148,6 +165,7 @@ class Window(MainWindow):
     
     #Функція для побудови прямої за двома точками
     def add_line(self):
+        self.temp += 1
         def _get_multiplier(directional_coor, anchor_coor, coor_type):
             if coor_type == "X":
                 bounds = self.settings.x_bounds
@@ -195,9 +213,20 @@ class Window(MainWindow):
 
         #будуємо лінію
         line = pv.Line(start_point, end_point)
-        
-        #відображаємо побудовану лінію на графіку та додаємо її до віджету з переліком примітивів
+
         self.plotter.add_mesh(line, color='black', line_width=5)
+        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
+        self.plotter.add_mesh(line, color='black', line_width=5, label = "Line")
+        label = ["Line " + str(self.temp)]
+        self.plotter.add_point_labels(midlle_point,
+        label,
+        italic=True,
+        font_size=10,
+        point_color='black',
+        point_size=1,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
@@ -246,10 +275,21 @@ class Window(MainWindow):
         start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point0, vector)]
 
         #будуємо лінію
+        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
+        label = ["Line " + str(self.temp)]
         line = pv.Line(start_point, end_point)
 
         #відображаємо побудовану лінію на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(line, color='black', line_width=5)
+        self.plotter.add_point_labels(midlle_point,
+        label,
+        italic=True,
+        font_size=10,
+        point_color='black',
+        point_size=1,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line by vector: {point0}, {vector}"))
         self.plotter.reset_camera()
@@ -285,6 +325,7 @@ class Window(MainWindow):
         vector_n = []
         if dialog.exec():
             vector_n = [float(i) for i in dialog.getInputs()]
+            
 
 
         if len(point_c) != 3 or len(vector_n) != 3:
@@ -309,7 +350,19 @@ class Window(MainWindow):
 
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
+        label = ["Line " + str(self.temp)]
         self.meshes.append(Surface(A, B, C, D, grid))
+        self.plotter.add_point_labels(point_c,
+        label,
+        italic=True,
+        font_size=20,
+        point_color='red',
+        point_size=20,
+        render_points_as_spheres=True,
+        always_visible=True,
+        shadow=True)
+        arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
+        self.plotter.add_mesh(arrow, color='blue')
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
@@ -328,7 +381,10 @@ class Window(MainWindow):
             x, y, z = compute_points(func, self.settings.x_bounds, self.settings.y_bounds)
             print(type(x), type(y), type(z))
             grid = pv.StructuredGrid(x, y, z)
+          
+           
             self.plotter.add_mesh(grid, color='blue', line_width=5)
+            
             self.meshes.append(Figure(grid, 'curve'))
             self.text_box.addItem(QListWidgetItem(func))
             self.plotter.reset_camera()
@@ -347,6 +403,17 @@ class Window(MainWindow):
             #будуємо та відображаємо криву
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
+            array = [x[0],y[0],z[0]]
+            label = ["Line " + str(self.temp)]
+            self.plotter.add_point_labels(array,
+            label,
+            italic=True,
+            font_size=20,
+            point_color='red',
+            point_size=20,
+            render_points_as_spheres=True,
+            always_visible=True,
+            shadow=True)
             self.meshes.append(Figure(grid, 'curve'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -393,6 +460,7 @@ class Window(MainWindow):
                 z = np.append(z, [k, point_0[2]])
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+            
             self.meshes.append(Figure(grid, 'Conic Surface'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -424,6 +492,13 @@ class Window(MainWindow):
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.meshes.append(Figure(grid, 'Cylindrical Surface'))
+            array = [x[0],y[0],z[0]]
+            curve_array = [curve_x[0],curve_y[0],curve_z[0]]
+            label_c = ["Point с " + str(self.temp_cylindric)]
+            self.plotter.add_point_labels(array,label_c,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+            label_p = ["Point p " + str(self.temp_cylindric)]
+            self.plotter.add_point_labels(curve_array,label_p,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
     
@@ -495,11 +570,32 @@ class Window(MainWindow):
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
             
+
             #будуємо та відображаємо поверхню
+            self.animate(points)
+
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
             self.meshes.append(Figure(surface, 'Surface of revolution'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+
+    def animate(self, points):
+        
+        animation_plotter = pv.Plotter()
+        animation_plotter.open_gif('points.gif')
+        
+        step = 1000
+
+        for i in range(0, len(points) - step, step):
+            poly = pv.PolyData(points[i:i+step])
+            
+            animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
+
+            animation_plotter.render()
+            animation_plotter.write_frame()
+
+        #animation_plotter.close()
+            
 
 
 

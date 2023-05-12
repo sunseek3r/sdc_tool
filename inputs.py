@@ -113,4 +113,3 @@ class ParameterDialog(QDialog):
     #Функція, що повертає введені користувачем дані
     def getInputs(self):
         return (self.m.text(), self.n.text(), self.p.text())
-
