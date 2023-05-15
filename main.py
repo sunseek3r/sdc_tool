@@ -350,7 +350,8 @@ class Window(MainWindow):
 
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
-        label = ["Line " + str(self.temp)]
+        self.animate(grid.points, step=10000)
+        label = ["Line " + str(self.temp_surface)]
         self.meshes.append(Surface(A, B, C, D, grid))
         self.plotter.add_point_labels(point_c,
         label,
@@ -583,12 +584,11 @@ class Window(MainWindow):
             self.meshes.append(Figure(surface, 'Surface of revolution'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
-    def animate(self, points):
+    def animate(self, points, step=1000):
         
         animation_plotter = pv.Plotter()
         animation_plotter.open_gif('points.gif')
         
-        step = 1000
 
         for i in range(0, len(points) - step, step):
             poly = pv.PolyData(points[i:i+step])
