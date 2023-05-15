@@ -451,16 +451,17 @@ class Window(MainWindow):
             x = np.array([])
             y = np.array([])
             z = np.array([])
-            for i, j, k in zip(curve_x, curve_y, curve_z):
-                #mul_x = _get_multiplier(point_0[0] - i, i, "X")
-                #mul_y = _get_multiplier(point_0[1] - j, j, "Y")
-                #mul_z = _get_multiplier(point_0[2] - k, k, "Z")
-                x = np.append(x, [i, point_0[0]])
-                y = np.append(y, [j, point_0[1]])
-                z = np.append(z, [k, point_0[2]])
-            grid = pv.StructuredGrid(x, y, z)
+            r_values = np.arange(-10, 10, 0.1)
+            x_inst = curve_x - point_0[0]
+            y_inst = curve_y - point_0[1]
+            z_inst = curve_z - point_0[2]
+            for r in r_values:
+                x = np.append(x, point_0[0] + r * (x_inst))
+                y = np.append(y, point_0[1] + r * (y_inst))
+                z = np.append(z, point_0[2] + r * (z_inst))
+            grid = pv.PolyData(list(zip(x, y, z)))
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
-            
+            self.animate(grid.points)
             self.meshes.append(Figure(grid, 'Conic Surface'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -472,7 +473,7 @@ class Window(MainWindow):
         if dialog.exec():
             vector = dialog.getInputs()
 
-        vector = [float(i) for i in vector]
+        point_0 = [float(i) for i in vector]
 
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
         functions = []
@@ -484,13 +485,16 @@ class Window(MainWindow):
             y = np.array([])
             z = np.array([])
 
-            for i, j, k in zip(curve_x, curve_y, curve_z):
-                x = np.append(x, [i, (i + vector[0])])
-                y = np.append(y, [j, (j + vector[1])])
-                z = np.append(z, [k, (k + vector[2])])
+            r_values = np.arange(-10, 10, 0.1)
+            
+            for r in r_values:
+                x = np.append(x, point_0[0]*r + curve_x)
+                y = np.append(y, point_0[1]*r + curve_y)
+                z = np.append(z, point_0[2]*r + curve_z)
 
-            grid = pv.StructuredGrid(x, y, z)
+            grid = pv.PolyData(list(zip(x, y, z)))
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
+            self.animate(grid.points)
             self.meshes.append(Figure(grid, 'Cylindrical Surface'))
             array = [x[0],y[0],z[0]]
             curve_array = [curve_x[0],curve_y[0],curve_z[0]]
