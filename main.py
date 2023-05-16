@@ -47,6 +47,7 @@ class Window(MainWindow):
         # Створюємо вікно
         QtWidgets.QMainWindow.__init__(self, parent=None)
         self.temp_line = 0
+        self.temp_vector_line = 0 
         self.temp_surface = 0 
         self.temp_curve = 0 
         self.temp_cylindric = 0 
@@ -165,7 +166,7 @@ class Window(MainWindow):
     
     #Функція для побудови прямої за двома точками
     def add_line(self):
-        self.temp += 1
+        self.temp_line += 1
         def _get_multiplier(directional_coor, anchor_coor, coor_type):
             if coor_type == "X":
                 bounds = self.settings.x_bounds
@@ -217,22 +218,15 @@ class Window(MainWindow):
         self.plotter.add_mesh(line, color='black', line_width=5)
         midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
         self.plotter.add_mesh(line, color='black', line_width=5, label = "Line")
-        label = ["Line " + str(self.temp)]
-        self.plotter.add_point_labels(midlle_point,
-        label,
-        italic=True,
-        font_size=10,
-        point_color='black',
-        point_size=1,
-        render_points_as_spheres=True,
-        always_visible=True,
-        shadow=True)
+        label = ["Line " + str(self.temp_line)]
+        self.plotter.add_point_labels(midlle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
 
     #Функція для побудови прямої за точкою та вектором
     def add_vector_line(self):
+        self.temp_vector_line += 1
         def _get_multiplier(directional_coor, anchor_coor, coor_type):
             if coor_type == "X":
                 bounds = self.settings.x_bounds
@@ -276,20 +270,12 @@ class Window(MainWindow):
 
         #будуємо лінію
         midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
-        label = ["Line " + str(self.temp)]
+        label = ["Line by vector " + str(self.temp_vector_line)]
         line = pv.Line(start_point, end_point)
 
         #відображаємо побудовану лінію на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(line, color='black', line_width=5)
-        self.plotter.add_point_labels(midlle_point,
-        label,
-        italic=True,
-        font_size=10,
-        point_color='black',
-        point_size=1,
-        render_points_as_spheres=True,
-        always_visible=True,
-        shadow=True)
+        self.plotter.add_point_labels(midlle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
         self.meshes.append(Figure(line, 'line'))
         self.text_box.addItem(QListWidgetItem(f"Line by vector: {point0}, {vector}"))
         self.plotter.reset_camera()
@@ -314,6 +300,8 @@ class Window(MainWindow):
 
     #Функція для побудови площини
     def add_surface(self):
+        self.temp_surface += 1
+
         #визиваємо діалогове вікно для вводу точки
         dialog = PointDialog("Input point C")
         point_c = []
@@ -351,17 +339,13 @@ class Window(MainWindow):
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
         self.animate(grid.points, step=10000)
+
+        label = ["Surface " + str(self.temp_surface)]
+
         label = ["Line " + str(self.temp_surface)]
+
         self.meshes.append(Surface(A, B, C, D, grid))
-        self.plotter.add_point_labels(point_c,
-        label,
-        italic=True,
-        font_size=20,
-        point_color='red',
-        point_size=20,
-        render_points_as_spheres=True,
-        always_visible=True,
-        shadow=True)
+        self.plotter.add_point_labels(point_c,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
         arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
         self.plotter.add_mesh(arrow, color='blue')
         self.text_box.addItem(QListWidgetItem("surface"))
@@ -369,6 +353,10 @@ class Window(MainWindow):
 
     #Функція для побудови кривої
     def add_curve(self):
+
+        self.temp_curve += 1
+
+
         #визиваємо діалогове вікно для вводу функції
         dialog = FunctionDialog("Input a function in form i.e. \"f(z)=2*x + 3*y\"")
         func = ""
@@ -405,22 +393,15 @@ class Window(MainWindow):
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
             array = [x[0],y[0],z[0]]
-            label = ["Line " + str(self.temp)]
-            self.plotter.add_point_labels(array,
-            label,
-            italic=True,
-            font_size=20,
-            point_color='red',
-            point_size=20,
-            render_points_as_spheres=True,
-            always_visible=True,
-            shadow=True)
+            label = ["Curve " + str(self.temp_curve)]
+            self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.meshes.append(Figure(grid, 'curve'))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
     #Функція для побудови конічної поверхні
     def add_conic_surface(self):
+        self.temp_conic += 1
         #def _get_multiplier(directional_coor, anchor_coor, coor_type):
             #if coor_type == "X":
                # bounds = self.settings.x_bounds
@@ -464,11 +445,19 @@ class Window(MainWindow):
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
             self.animate(grid.points)
             self.meshes.append(Figure(grid, 'Conic Surface'))
+            array = np.array(
+                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
+                 [x[-1], y[-1], z[-1]]]
+                )
+         
+            label = ["point c " + str(self.temp_conic), "point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
+            self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
     #Функція для побудови циліндричної поверхні
     def add_cylindrical_surface(self):
+        self.temp_cylindric += 1
         dialog = VectorLineDialog()
         vector = []
         if dialog.exec():
@@ -497,12 +486,13 @@ class Window(MainWindow):
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.animate(grid.points)
             self.meshes.append(Figure(grid, 'Cylindrical Surface'))
-            array = [x[0],y[0],z[0]]
-            curve_array = [curve_x[0],curve_y[0],curve_z[0]]
-            label_c = ["Point с " + str(self.temp_cylindric)]
-            self.plotter.add_point_labels(array,label_c,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
-            label_p = ["Point p " + str(self.temp_cylindric)]
-            self.plotter.add_point_labels(curve_array,label_p,italic=True,font_size=10,point_color='yellow',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+            array = np.array(
+                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
+                 [x[-1], y[-1], z[-1]]]
+                )
+         
+            label = ["point c " + str(self.temp_cylindric), "point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
+            self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
 
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -545,6 +535,9 @@ class Window(MainWindow):
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):
+
+        self.temp_surface_of_revolution += 1
+
         #визиваємо діалогові вікна для вводу даних про вісь обертання
         dialog1 = PointDialog("Input point 0")
         dialog2 = VectorLineDialog()
@@ -574,6 +567,10 @@ class Window(MainWindow):
                 #обчислюємо точки кривої оберненої на кут theta
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
+            x, y, z = zip(*points)
+            x = np.array(x)
+            y = np.array(y)
+            z = np.array(z)
             
 
             #будуємо та відображаємо поверхню
@@ -582,6 +579,13 @@ class Window(MainWindow):
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
             self.meshes.append(Figure(surface, 'Surface of revolution'))
+            array = np.array(
+                [[x[0],y[0],z[0]],[x_g[0],y_g[0],z_g[0]], [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]],
+                 [x[-1],y[-1],z[-1]]]
+                )
+         
+            label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+            self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
     def animate(self, points, step=1000):
