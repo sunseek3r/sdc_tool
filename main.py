@@ -301,6 +301,7 @@ class Window(MainWindow):
     #Функція для побудови площини
     def add_surface(self):
         self.temp_surface += 1
+
         #визиваємо діалогове вікно для вводу точки
         dialog = PointDialog("Input point C")
         point_c = []
@@ -338,7 +339,11 @@ class Window(MainWindow):
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
         self.plotter.add_mesh(grid, opacity=0.7, color='red')
         self.animate(grid.points, step=10000)
+
         label = ["Surface " + str(self.temp_surface)]
+
+        label = ["Line " + str(self.temp_surface)]
+
         self.meshes.append(Surface(A, B, C, D, grid))
         self.plotter.add_point_labels(point_c,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
         arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
@@ -348,7 +353,10 @@ class Window(MainWindow):
 
     #Функція для побудови кривої
     def add_curve(self):
+
         self.temp_curve += 1
+
+
         #визиваємо діалогове вікно для вводу функції
         dialog = FunctionDialog("Input a function in form i.e. \"f(z)=2*x + 3*y\"")
         func = ""
@@ -527,7 +535,9 @@ class Window(MainWindow):
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):
+
         self.temp_surface_of_revolution += 1
+
         #визиваємо діалогові вікна для вводу даних про вісь обертання
         dialog1 = PointDialog("Input point 0")
         dialog2 = VectorLineDialog()
@@ -562,6 +572,7 @@ class Window(MainWindow):
             y = np.array(y)
             z = np.array(z)
             
+
             #будуємо та відображаємо поверхню
             self.animate(points)
 
