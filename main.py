@@ -435,15 +435,17 @@ class Window(MainWindow):
                 overlap_points.append(point)
 
         #Відображаємо знайдений перетин
-        intersection = pv.PolyData(overlap_points)
+        intersection = pv.MultipleLines(points=overlap_points)
         
-        self.plotter.add_mesh(intersection, color='white', point_size=10)
+        self.plotter.add_mesh(intersection, color='white', line_width=10)
         self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
-
+        self.text_box.addItem(QListWidgetItem("Intersection"))
     def delete_figures(self):
         items = self.text_box.selectedIndexes()
-
         indexes = [i.row() for i in items]
+
+        for i in reversed(indexes):
+            self.text_box.takeItem(i)
         self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
         self.plotter.clear()
         self.plotter.show_grid()
@@ -515,13 +517,14 @@ class Window(MainWindow):
 
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
-            self.meshes.append(Figure(surface, 'Surface of revolution'))
+            
             array = np.array(
                 [[x[0],y[0],z[0]],[x_g[0],y_g[0],z_g[0]], [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]],
                  [x[-1],y[-1],z[-1]]]
                 )
          
             label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)]))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
