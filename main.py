@@ -335,6 +335,9 @@ class Window(MainWindow):
 
             curve_x, curve_y, curve_z = compute_parameter(functions)
             
+            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
+
             x = np.array([])
             y = np.array([])
             z = np.array([])
@@ -376,6 +379,9 @@ class Window(MainWindow):
         if dialog.exec():
             functions = dialog.getInputs()
             curve_x, curve_y, curve_z = compute_parameter(functions)
+
+            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
             
             x = np.array([])
             y = np.array([])
@@ -477,6 +483,11 @@ class Window(MainWindow):
     def add_surface_revolution(self):
 
         self.temp_surface_of_revolution += 1
+        def _get_multiplier(dir, coord, bound, t):
+            if dir == 0:
+                return t # cannot extend with this coordinate => return infinity
+            return (bound-coord)/dir
+            
 
         #визиваємо діалогові вікна для вводу даних про вісь обертання
         dialog1 = PointDialog("Input point 0")
@@ -497,6 +508,9 @@ class Window(MainWindow):
             #обчислюємо точки кривої
             functions = dialog.getInputs()
             x_g, y_g, z_g = compute_parameter(functions)
+
+            grid = pv.StructuredGrid(x_g, y_g, z_g)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
 
             #обчмслюємо точки поверхні
             points = []
@@ -528,6 +542,24 @@ class Window(MainWindow):
             self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)]))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+        
+        #обчислюємо напрямний вектор для прямої  
+        point_0 = [float(i) for i in point_0]
+        vector = [float(i) for i in vector_n]
+
+        bounds = self.plotter.bounds
+
+        #обчислюємо координати кінцевої точки прямої
+        mult = max([_get_multiplier(vector[0], point_0[0], bounds[0], -1e9), _get_multiplier(vector[1], point_0[1], bounds[2], -1e9), _get_multiplier(vector[2], point_0[2], bounds[4], -1e9)])
+        end_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+    
+        #обчислюємо координати початкової точки прямої
+        mult = min([_get_multiplier(vector[0], point_0[0], bounds[1], 1e9), _get_multiplier(vector[1], point_0[1], bounds[3], 1e9), _get_multiplier(vector[2], point_0[2], bounds[5], 1e9)])
+        start_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+
+        #будуємо лінію
+        line = pv.Line(start_point, end_point)
+        self.plotter.add_mesh(line, color='red', line_width=5)
 
     def animate(self, points, step=1000):
         
