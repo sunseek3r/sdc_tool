@@ -36,7 +36,7 @@ def compute_parameter(functions):
     t = symbols('t')
 
     #задаємо межі параметра t
-    ts = np.arange(-50, 50, 0.25)
+    ts = np.arange(-50, 50, 0.1)
 
     #перетворюємо введені користувачем функції у лямбда-вирази
     f_x = lambdify(t, functions[0], 'numpy')

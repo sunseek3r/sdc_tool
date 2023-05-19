@@ -23,23 +23,6 @@ import time
 # Function to create and display the 3D plot
 
 
-"""
-TODO:
-    !!!!!!!!!! CLEAR DOCUMENTATION !!!!!!!!!!!!!!!!!!!!
-    - create classes for different types of input:
-    1) Line
-    2) Curve
-    3) Plain
-    4) Rotational Figures
-    5) Conic Figures
-    6) Cillyndric Figures
-    - create input field
-    - Customization tool i.e. zalivka
-    - Intersections tool
-    - save to file
-    - animations
-"""
-
 #Клас головного вікна програми
 class Window(MainWindow):
     
@@ -111,6 +94,9 @@ class Window(MainWindow):
         intersect_button.triggered.connect(self.intersect)
         tools_menu.addAction(intersect_button)
         
+        delete_button = QtWidgets.QAction('Delete', self)
+        delete_button.triggered.connect(self.delete_figures)
+        tools_menu.addAction(delete_button)
 
         
         #Створюємо та додаємо до лівого віджета кнопку для побудови сфери
@@ -531,7 +517,32 @@ class Window(MainWindow):
         #Відображаємо знайдений перетин
         intersection = pv.PolyData(overlap_points)
         
-        self.plotter.add_mesh(intersection, color='yellow', point_size=10)
+        self.plotter.add_mesh(intersection, color='white', point_size=10)
+        self.meshes.append(Figure(intersection, 'Intersection'))
+
+    def delete_figures(self):
+        items = self.text_box.selectedIndexes()
+
+        indexes = [i.row() for i in items]
+        self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
+        self.plotter.clear()
+        self.plotter.show_grid()
+        for i in self.meshes:
+            match i.fig_type:
+                case 'line':
+                    self.plotter.add_mesh(i.mesh, color='black', line_width=5)
+                case 'Surface':
+                    self.plotter.add_mesh(i.mesh, color='red', opacity=0.7)
+                case 'curve':
+                    self.plotter.add_mesh(i.mesh, color='blue', line_width=5)
+                case 'Conic Surface':
+                    self.plotter.add_mesh(i.mesh, color='purple', line_width=5, opacity=0.5)
+                case 'Cylindrical Surface':
+                    self.plotter.add_mesh(i.mesh, color='yellow', line_width=5, opacity=0.5)
+                case 'Intersection':
+                    self.plotter.add_mesh(i.mesh, color='white', point_size=10)
+                case 'Surface of revolution':
+                    self.plotter.add_mesh(i.mesh, color='lightblue', opacity=0.25)
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):

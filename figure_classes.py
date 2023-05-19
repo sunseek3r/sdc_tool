@@ -3,9 +3,10 @@
 """
 
 class Figure():
-    def __init__(self, mesh, fig_type='Figure'):
+    def __init__(self, mesh, fig_type='Figure', labels=[]):
         self.mesh = mesh
         self.fig_type = fig_type
+        self.labels = labels
 
 class Line(Figure):
     """
@@ -33,6 +34,6 @@ class Surface(Figure):
         self.B = B
         self.C = C
         self.D = D
-        self.type = 'Surface'
+        self.fig_type = 'Surface'
 
 
