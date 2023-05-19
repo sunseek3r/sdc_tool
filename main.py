@@ -15,7 +15,7 @@ import numpy as np
 from figure_classes import Figure, Line, Surface, ArrowLabel, PointLabel
 from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix
+from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix, sort_points
 from scipy.spatial import cKDTree
 import time
 
@@ -433,18 +433,19 @@ class Window(MainWindow):
         for point in points:
             if np.abs(A*point[0] + B*point[1] + C*point[2] + D) < delta:
                 overlap_points.append(point)
-
+        overlap_points = sort_points(overlap_points)
         #Відображаємо знайдений перетин
         intersection = pv.MultipleLines(points=overlap_points)
         
         self.plotter.add_mesh(intersection, color='white', line_width=10)
         self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
         self.text_box.addItem(QListWidgetItem("Intersection"))
+
     def delete_figures(self):
         items = self.text_box.selectedIndexes()
         indexes = [i.row() for i in items]
 
-        for i in reversed(indexes):
+        for i in reversed(sorted(indexes)):
             self.text_box.takeItem(i)
         self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
         self.plotter.clear()
@@ -462,7 +463,7 @@ class Window(MainWindow):
                 case 'Cylindrical Surface':
                     self.plotter.add_mesh(i.mesh, color='yellow', line_width=5, opacity=0.5)
                 case 'Intersection':
-                    self.plotter.add_mesh(i.mesh, color='white', point_size=10)
+                    self.plotter.add_mesh(i.mesh, color='white', line_width=10)
                 case 'Surface of revolution':
                     self.plotter.add_mesh(i.mesh, color='lightblue', opacity=0.25)
             print(len(i.labels))
