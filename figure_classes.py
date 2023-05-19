@@ -3,10 +3,20 @@
 """
 
 class Figure():
-    def __init__(self, mesh, fig_type='Figure', labels=[]):
+    def __init__(self, mesh, fig_type, labels):
         self.mesh = mesh
         self.fig_type = fig_type
         self.labels = labels
+
+
+class PointLabel():
+    def __init__(self, label, array):
+        self.label = label
+        self.array = array
+
+class ArrowLabel():
+    def __init__(self, arrow):
+        self.arrow = arrow
 
 class Line(Figure):
     """
@@ -28,12 +38,12 @@ class Line(Figure):
 
 
 class Surface(Figure):
-    def __init__(self, A, B, C, D, mesh):
-        Figure.__init__(self, mesh)
+    def __init__(self, A, B, C, D, mesh, labels):
+        Figure.__init__(self, mesh, 'Surface', labels)
         self.A = A
         self.B = B
         self.C = C
         self.D = D
-        self.fig_type = 'Surface'
+        #self.fig_type = 'Surface'
 
 
