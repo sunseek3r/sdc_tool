@@ -12,33 +12,16 @@ from PyQt5.QtWidgets import QLineEdit
 from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
-from figure_classes import Figure, Line, Surface
+from figure_classes import Figure, Line, Surface, ArrowLabel, PointLabel
 from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix
+from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix, sort_points
 from scipy.spatial import cKDTree
 import time
 
 
 # Function to create and display the 3D plot
 
-
-"""
-TODO:
-    !!!!!!!!!! CLEAR DOCUMENTATION !!!!!!!!!!!!!!!!!!!!
-    - create classes for different types of input:
-    1) Line
-    2) Curve
-    3) Plain
-    4) Rotational Figures
-    5) Conic Figures
-    6) Cillyndric Figures
-    - create input field
-    - Customization tool i.e. zalivka
-    - Intersections tool
-    - save to file
-    - animations
-"""
 
 #Клас головного вікна програми
 class Window(MainWindow):
@@ -111,13 +94,11 @@ class Window(MainWindow):
         intersect_button.triggered.connect(self.intersect)
         tools_menu.addAction(intersect_button)
         
+        delete_button = QtWidgets.QAction('Delete', self)
+        delete_button.triggered.connect(self.delete_figures)
+        tools_menu.addAction(delete_button)
 
         
-        #Створюємо та додаємо до лівого віджета кнопку для побудови сфери
-        sphere_button = QPushButton("Sphere", self)
-        sphere_button.clicked.connect(self.add_sphere)
-        left_layout.addWidget(sphere_button)
-
         #Створюємо та додаємо до лівого віджета кнопку для побудови лінії за двома точками
         line_button = QPushButton("Line", self)
         line_button.clicked.connect(self.add_line)
@@ -128,10 +109,6 @@ class Window(MainWindow):
         surface_button.clicked.connect(self.add_surface)
         left_layout.addWidget(surface_button)
         
-        #Створюємо та додаємо до лівого віджета кнопку для побудови точкою та вектором
-        line_by_vector_button = QPushButton("Line by vector", self)
-        line_by_vector_button.clicked.connect(self.add_vector_line)
-        left_layout.addWidget(line_by_vector_button)
 
         #Створюємо та додаємо до лівого віджета кнопку для побудови кривої
         curve_button = QPushButton("Curve", self)
@@ -216,87 +193,14 @@ class Window(MainWindow):
         line = pv.Line(start_point, end_point)
 
         self.plotter.add_mesh(line, color='black', line_width=5)
-        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
+        middle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
         self.plotter.add_mesh(line, color='black', line_width=5, label = "Line")
         label = ["Line " + str(self.temp_line)]
-        self.plotter.add_point_labels(midlle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
-        self.meshes.append(Figure(line, 'line'))
+        self.plotter.add_point_labels(middle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
+        self.meshes.append(Figure(line, 'line', labels=[PointLabel([label], middle_point)]))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
 
-    #Функція для побудови прямої за точкою та вектором
-    def add_vector_line(self):
-        self.temp_vector_line += 1
-        def _get_multiplier(directional_coor, anchor_coor, coor_type):
-            if coor_type == "X":
-                bounds = self.settings.x_bounds
-            elif coor_type == "Y":
-                bounds = self.settings.y_bounds
-            elif coor_type == "Z":
-                bounds = self.settings.z_bounds
-            
-            if directional_coor == 0:
-                return 1e9 # cannot extend with this coordinate => return infinity
-
-            if directional_coor < 0:
-                return (bounds[0] - anchor_coor) / directional_coor
-            else:
-                return (bounds[1] - anchor_coor) / directional_coor
-
-        #визиваємо діалогове вікно для вводу точки     
-        dialog = PointDialog("Input point 0")
-        point0 = []
-        if dialog.exec():
-            point0 = dialog.getInputs()
-        
-        #визиваємо діалогове вікно для вводу напрямного вектора 
-        dialog = VectorLineDialog()
-        vector = []
-        if dialog.exec():
-            vector = dialog.getInputs()
-
-        point0 = [float(i) for i in point0]
-        vector = [float(i) for i in vector]
-
-        #обчислюємо координати кінцевої точки прямої
-        mult = min([_get_multiplier(vector[0], point0[0], "X"), _get_multiplier(vector[1], point0[1], "Y"), _get_multiplier(vector[2], point0[2], "Z")])
-        vector = [i * mult for i in vector]
-        end_point = [point_coor + vector_coor for point_coor, vector_coor in zip(point0, vector)]
-    
-        #обчислюємо координати початкової точки прямої
-        mult = min([_get_multiplier(-vector[0], point0[0], "X"), _get_multiplier(-vector[1], point0[1], "Y"), _get_multiplier(-vector[2], point0[2], "Z")])
-        vector = [i * mult for i in vector]
-        start_point = [point_coor - vector_coor for point_coor, vector_coor in zip(point0, vector)]
-
-        #будуємо лінію
-        midlle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
-        label = ["Line by vector " + str(self.temp_vector_line)]
-        line = pv.Line(start_point, end_point)
-
-        #відображаємо побудовану лінію на графіку та додаємо її до віджету з переліком примітивів
-        self.plotter.add_mesh(line, color='black', line_width=5)
-        self.plotter.add_point_labels(midlle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
-        self.meshes.append(Figure(line, 'line'))
-        self.text_box.addItem(QListWidgetItem(f"Line by vector: {point0}, {vector}"))
-        self.plotter.reset_camera()
-
-    def add_sphere(self):
-        dialog = SphereDialog()
-        centre = []
-        if dialog.exec():
-            centre = dialog.getInputs()
-        if centre is None or len(centre) != 3:
-            return
-        centre = [float(i) for i in centre]
-        radius, ok = QInputDialog.getDouble(self, "Input", "Radius")
-        print(radius)
-        if ok and radius != 0:
-            sphere = pv.Sphere(radius, centre)
-            self.plotter.add_mesh(sphere, opacity=0.5, show_edges=False)
-            self.meshes.append(Figure(sphere, 'sphere'))
-            self.text_box.addItem(QListWidgetItem(f"Sphere: centre:{centre}, radius:{radius}"))
-            self.plotter.reset_camera()
-            self.settings.update_bounds(sphere.bounds)
 
     #Функція для побудови площини
     def add_surface(self):
@@ -342,12 +246,13 @@ class Window(MainWindow):
 
         label = ["Surface " + str(self.temp_surface)]
 
-        label = ["Line " + str(self.temp_surface)]
+        #label = ["Line " + str(self.temp_surface)]
 
-        self.meshes.append(Surface(A, B, C, D, grid))
+        
         self.plotter.add_point_labels(point_c,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
         arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
         self.plotter.add_mesh(arrow, color='blue')
+        self.meshes.append(Surface(A, B, C, D, grid, labels=[ArrowLabel(arrow), PointLabel(label, point_c)]))
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
@@ -430,6 +335,9 @@ class Window(MainWindow):
 
             curve_x, curve_y, curve_z = compute_parameter(functions)
             
+            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
+
             x = np.array([])
             y = np.array([])
             z = np.array([])
@@ -442,17 +350,28 @@ class Window(MainWindow):
                 y = np.append(y, point_0[1] + r * (y_inst))
                 z = np.append(z, point_0[2] + r * (z_inst))
             grid = pv.PolyData(list(zip(x, y, z)))
+            start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
+            end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=7)
+            mid_point = [point_0[0] + 5 * (curve_x[0] - point_0[0]), point_0[1] + 5 * (curve_y[0] - point_0[1]), point_0[2] + 5 * (curve_z[0] - point_0[2])]
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
             self.animate(grid.points)
-            self.meshes.append(Figure(grid, 'Conic Surface'))
+            
             array = np.array(
-                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
-                 [x[-1], y[-1], z[-1]]]
-                )
+                [[curve_x[0],curve_y[0],curve_z[0]],[curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]]])
+            # Create an array with the midpoint coordinates
+            
+
+            # Vertically stack the midpoint array with the existing array
+            array = np.vstack((point_0,array,mid_point_array))
          
-            label = ["point c " + str(self.temp_conic), "point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
+            label = ["point c " + str(self.temp_cylindric),"point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+            self.meshes.append(Figure(grid, 'Conic Surface', labels=[PointLabel(label, array)]))
             self.plotter.reset_camera()
 
     #Функція для побудови циліндричної поверхні
@@ -470,6 +389,9 @@ class Window(MainWindow):
         if dialog.exec():
             functions = dialog.getInputs()
             curve_x, curve_y, curve_z = compute_parameter(functions)
+            first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
+            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
             
             x = np.array([])
             y = np.array([])
@@ -483,17 +405,23 @@ class Window(MainWindow):
                 z = np.append(z, point_0[2]*r + curve_z)
 
             grid = pv.PolyData(list(zip(x, y, z)))
+            start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
+            end_point = [curve_x[0] - 10 * point_0[0], curve_y[0] - 10 * point_0[1], curve_z[0] - 10 * point_0[2]]
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=7)
+            mid_point = [curve_x[0] + 5 * point_0[0], curve_y[0] + 5 * point_0[1], curve_z[0] + 5 * point_0[2]]
+            array = np.array(
+                [[curve_x[0],curve_y[0],curve_z[0]],[curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]]])
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.animate(grid.points)
-            self.meshes.append(Figure(grid, 'Cylindrical Surface'))
-            array = np.array(
-                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
-                 [x[-1], y[-1], z[-1]]]
-                )
-         
-            label = ["point c " + str(self.temp_cylindric), "point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
+            array = np.vstack((array,mid_point_array))
+            arrow = pv.Arrow(first_dot, vector, scale = 'auto')
+            self.plotter.add_mesh(arrow, color='blue')
+            label = ["point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
-
+            self.meshes.append(Figure(grid, 'Cylindrical Surface', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
     
@@ -527,16 +455,55 @@ class Window(MainWindow):
         for point in points:
             if np.abs(A*point[0] + B*point[1] + C*point[2] + D) < delta:
                 overlap_points.append(point)
-
+        overlap_points = sort_points(overlap_points)
         #Відображаємо знайдений перетин
-        intersection = pv.PolyData(overlap_points)
+        intersection = pv.MultipleLines(points=overlap_points)
         
-        self.plotter.add_mesh(intersection, color='yellow', point_size=10)
+        self.plotter.add_mesh(intersection, color='white', line_width=10)
+        self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+        self.text_box.addItem(QListWidgetItem("Intersection"))
+
+    def delete_figures(self):
+        items = self.text_box.selectedIndexes()
+        indexes = [i.row() for i in items]
+
+        for i in reversed(sorted(indexes)):
+            self.text_box.takeItem(i)
+        self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
+        self.plotter.clear()
+        self.plotter.show_grid()
+        for i in self.meshes:
+            match i.fig_type:
+                case 'line':
+                    self.plotter.add_mesh(i.mesh, color='black', line_width=5)
+                case 'Surface':
+                    self.plotter.add_mesh(i.mesh, color='red', opacity=0.7)
+                case 'curve':
+                    self.plotter.add_mesh(i.mesh, color='blue', line_width=5)
+                case 'Conic Surface':
+                    self.plotter.add_mesh(i.mesh, color='purple', line_width=5, opacity=0.5)
+                case 'Cylindrical Surface':
+                    self.plotter.add_mesh(i.mesh, color='yellow', line_width=5, opacity=0.5)
+                case 'Intersection':
+                    self.plotter.add_mesh(i.mesh, color='white', line_width=10)
+                case 'Surface of revolution':
+                    self.plotter.add_mesh(i.mesh, color='lightblue', opacity=0.25)
+            print(len(i.labels))
+            for j in i.labels:
+                if isinstance(j, PointLabel):
+                    self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
+                else:
+                    self.plotter.add_mesh(j.arrow, color='blue')
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):
 
         self.temp_surface_of_revolution += 1
+        def _get_multiplier(dir, coord, bound, t):
+            if dir == 0:
+                return t # cannot extend with this coordinate => return infinity
+            return (bound-coord)/dir
+            
 
         #визиваємо діалогові вікна для вводу даних про вісь обертання
         dialog1 = PointDialog("Input point 0")
@@ -558,6 +525,9 @@ class Window(MainWindow):
             functions = dialog.getInputs()
             x_g, y_g, z_g = compute_parameter(functions)
 
+            grid = pv.StructuredGrid(x_g, y_g, z_g)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
+            arrow = pv.Arrow(point_0, vector_n, scale = 'auto')
             #обчмслюємо точки поверхні
             points = []
             for theta in range(360):
@@ -567,10 +537,10 @@ class Window(MainWindow):
                 #обчислюємо точки кривої оберненої на кут theta
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
-            x, y, z = zip(*points)
-            x = np.array(x)
-            y = np.array(y)
-            z = np.array(z)
+            # Calculate midpoint coordinates
+           
+
+            
             
 
             #будуємо та відображаємо поверхню
@@ -578,15 +548,47 @@ class Window(MainWindow):
 
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
-            self.meshes.append(Figure(surface, 'Surface of revolution'))
+            
+            #обчислюємо напрямний вектор для прямої  
+            point_0 = [float(i) for i in point_0]
+            vector = [float(i) for i in vector_n]
+
+            bounds = self.plotter.bounds
+            bounds = list(bounds)
+            bounds[0] = min(bounds[0],point_0[0])
+            bounds[1] = max(bounds[1],point_0[0])
+            bounds[2] = min(bounds[2],point_0[1])
+            bounds[3] = max(bounds[3],point_0[1])
+            bounds[4] = min(bounds[4],point_0[2])
+            bounds[5] = max(bounds[5],point_0[2])
+
+            #обчислюємо координати кінцевої точки прямої
+            mult = max([_get_multiplier(vector[0], point_0[0], bounds[0], -1e9), _get_multiplier(vector[1], point_0[1], bounds[2], -1e9), _get_multiplier(vector[2], point_0[2], bounds[4], -1e9)])
+            end_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+        
+            #обчислюємо координати початкової точки прямої
+            mult = min([_get_multiplier(vector[0], point_0[0], bounds[1], 1e9), _get_multiplier(vector[1], point_0[1], bounds[3], 1e9), _get_multiplier(vector[2], point_0[2], bounds[5], 1e9)])
+            start_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+
+            #будуємо лінію
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=5)
+            mid_point = [(start + end) / 2 for start, end in zip(start_point, end_point)]
             array = np.array(
-                [[x[0],y[0],z[0]],[x_g[0],y_g[0],z_g[0]], [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]],
-                 [x[-1],y[-1],z[-1]]]
-                )
-         
-            label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+                [ [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]]])
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
+
+            # Vertically stack the midpoint array with the existing array
+            array = np.vstack((point_0, array, mid_point_array))
+            self.plotter.add_mesh(arrow, color='blue')
+            label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+         
+
+        
 
     def animate(self, points, step=1000):
         
