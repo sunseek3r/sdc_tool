@@ -351,16 +351,30 @@ class Window(MainWindow):
                 y = np.append(y, point_0[1] + r * (y_inst))
                 z = np.append(z, point_0[2] + r * (z_inst))
             grid = pv.PolyData(list(zip(x, y, z)))
+
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
+
+            start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
+            end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=7)
+            mid_point = [point_0[0] + 5 * (curve_x[0] - point_0[0]), point_0[1] + 5 * (curve_y[0] - point_0[1]), point_0[2] + 5 * (curve_z[0] - point_0[2])]
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
+            self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+
             self.animate(grid.points)
             
             array = np.array(
-                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
-                 [x[-1], y[-1], z[-1]]]
-                )
+                [[curve_x[0],curve_y[0],curve_z[0]],[curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]]])
+            # Create an array with the midpoint coordinates
+            
+
+            # Vertically stack the midpoint array with the existing array
+            array = np.vstack((point_0,array,mid_point_array))
          
-            label = ["point c " + str(self.temp_conic), "point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
+            label = ["point c " + str(self.temp_cylindric),"point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.meshes.append(Figure(grid, 'Conic Surface', labels=[PointLabel(label, array)], color=color))
@@ -382,6 +396,8 @@ class Window(MainWindow):
             functions = dialog.getInputs()
             curve_x, curve_y, curve_z = compute_parameter(functions)
 
+            first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
+
             grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
             self.plotter.add_mesh(grid, color='green', line_width=9)
             
@@ -397,18 +413,33 @@ class Window(MainWindow):
                 z = np.append(z, point_0[2]*r + curve_z)
 
             grid = pv.PolyData(list(zip(x, y, z)))
+
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
-            self.animate(grid.points)
-            
+
+            start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
+            end_point = [curve_x[0] - 10 * point_0[0], curve_y[0] - 10 * point_0[1], curve_z[0] - 10 * point_0[2]]
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=7)
+            mid_point = [curve_x[0] + 5 * point_0[0], curve_y[0] + 5 * point_0[1], curve_z[0] + 5 * point_0[2]]
             array = np.array(
-                [[x[0], y[0], z[0]],[curve_x[0],curve_y[0],curve_z[0]], [curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]],
-                 [x[-1], y[-1], z[-1]]]
-                )
-         
-            label = ["point c " + str(self.temp_cylindric), "point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
+                [[curve_x[0],curve_y[0],curve_z[0]],[curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]]])
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
+            self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
+
+            self.animate(grid.points)
+
+            array = np.vstack((array,mid_point_array))
+            arrow = pv.Arrow(first_dot, vector, scale = 'auto')
+            self.plotter.add_mesh(arrow, color='blue')
+            label = ["point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
-            self.meshes.append(Figure(grid, 'Cylindrical Surface', labels=[PointLabel(label, array)],color=color))
+
+
+            self.meshes.append(Figure(grid, 'Cylindrical Surface', labels=[ArrowLabel(arrow),PointLabel(label, array)],color=color))
+
+
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
     
@@ -516,6 +547,8 @@ class Window(MainWindow):
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=9)
 
+            arrow = pv.Arrow(point_0, vector_n, scale = 'auto')
+
             #обчмслюємо точки поверхні
             points = []
             for theta in range(360):
@@ -525,16 +558,17 @@ class Window(MainWindow):
                 #обчислюємо точки кривої оберненої на кут theta
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
-            x, y, z = zip(*points)
-            x = np.array(x)
-            y = np.array(y)
-            z = np.array(z)
+            # Calculate midpoint coordinates
+           
+
+            
             
 
             #будуємо та відображаємо поверхню
             self.animate(points)
 
             surface = pv.PolyData(points)
+
             color = self.get_color()
             self.plotter.add_mesh(surface, color=color, opacity=0.25)
             
@@ -545,26 +579,51 @@ class Window(MainWindow):
          
             label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
             self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)], color=color))
+
+            self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
+
+            #обчислюємо напрямний вектор для прямої  
+            point_0 = [float(i) for i in point_0]
+            vector = [float(i) for i in vector_n]
+
+            bounds = self.plotter.bounds
+            bounds = list(bounds)
+            bounds[0] = min(bounds[0],point_0[0])
+            bounds[1] = max(bounds[1],point_0[0])
+            bounds[2] = min(bounds[2],point_0[1])
+            bounds[3] = max(bounds[3],point_0[1])
+            bounds[4] = min(bounds[4],point_0[2])
+            bounds[5] = max(bounds[5],point_0[2])
+
+            #обчислюємо координати кінцевої точки прямої
+            mult = max([_get_multiplier(vector[0], point_0[0], bounds[0], -1e9), _get_multiplier(vector[1], point_0[1], bounds[2], -1e9), _get_multiplier(vector[2], point_0[2], bounds[4], -1e9)])
+            end_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+        
+            #обчислюємо координати початкової точки прямої
+            mult = min([_get_multiplier(vector[0], point_0[0], bounds[1], 1e9), _get_multiplier(vector[1], point_0[1], bounds[3], 1e9), _get_multiplier(vector[2], point_0[2], bounds[5], 1e9)])
+            start_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
+
+            #будуємо лінію
+            line = pv.Line(start_point, end_point)
+            self.plotter.add_mesh(line, color='red', line_width=5)
+            mid_point = [(start + end) / 2 for start, end in zip(start_point, end_point)]
+            array = np.array(
+                [ [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]]])
+            # Create an array with the midpoint coordinates
+            mid_point_array = np.array(mid_point)
+
+            # Vertically stack the midpoint array with the existing array
+            array = np.vstack((point_0, array, mid_point_array))
+            self.plotter.add_mesh(arrow, color='blue')
+            label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
+
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+         
+
         
-        #обчислюємо напрямний вектор для прямої  
-        point_0 = [float(i) for i in point_0]
-        vector = [float(i) for i in vector_n]
 
-        bounds = self.plotter.bounds
-
-        #обчислюємо координати кінцевої точки прямої
-        mult = max([_get_multiplier(vector[0], point_0[0], bounds[0], -1e9), _get_multiplier(vector[1], point_0[1], bounds[2], -1e9), _get_multiplier(vector[2], point_0[2], bounds[4], -1e9)])
-        end_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
-    
-        #обчислюємо координати початкової точки прямої
-        mult = min([_get_multiplier(vector[0], point_0[0], bounds[1], 1e9), _get_multiplier(vector[1], point_0[1], bounds[3], 1e9), _get_multiplier(vector[2], point_0[2], bounds[5], 1e9)])
-        start_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
-
-        #будуємо лінію
-        line = pv.Line(start_point, end_point)
-        self.plotter.add_mesh(line, color='red', line_width=5)
 
     def animate(self, points, step=1000, color = ""):
         
