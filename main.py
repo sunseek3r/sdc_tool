@@ -349,6 +349,11 @@ class Window(MainWindow):
                 x = np.append(x, point_0[0] + r * (x_inst))
                 y = np.append(y, point_0[1] + r * (y_inst))
                 z = np.append(z, point_0[2] + r * (z_inst))
+
+            if x.size * y.size * z.size == 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Some error occured, try again")
             grid = pv.PolyData(list(zip(x, y, z)))
             start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
             end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
