@@ -389,7 +389,9 @@ class Window(MainWindow):
         if dialog.exec():
             functions = dialog.getInputs()
             curve_x, curve_y, curve_z = compute_parameter(functions)
+
             first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
+
             grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
             self.plotter.add_mesh(grid, color='green', line_width=9)
             
@@ -416,12 +418,14 @@ class Window(MainWindow):
             mid_point_array = np.array(mid_point)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
             self.animate(grid.points)
+
             array = np.vstack((array,mid_point_array))
             arrow = pv.Arrow(first_dot, vector, scale = 'auto')
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.meshes.append(Figure(grid, 'Cylindrical Surface', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
+
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
     
@@ -527,7 +531,9 @@ class Window(MainWindow):
 
             grid = pv.StructuredGrid(x_g, y_g, z_g)
             self.plotter.add_mesh(grid, color='green', line_width=9)
+
             arrow = pv.Arrow(point_0, vector_n, scale = 'auto')
+
             #обчмслюємо точки поверхні
             points = []
             for theta in range(360):
@@ -548,7 +554,7 @@ class Window(MainWindow):
 
             surface = pv.PolyData(points)
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
-            
+
             #обчислюємо напрямний вектор для прямої  
             point_0 = [float(i) for i in point_0]
             vector = [float(i) for i in vector_n]
@@ -589,6 +595,7 @@ class Window(MainWindow):
          
 
         
+
 
     def animate(self, points, step=1000):
         
