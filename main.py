@@ -372,7 +372,7 @@ class Window(MainWindow):
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
             self.meshes.append(ConicSurface(grid, [PointLabel(label, array)], 
-                                            curve_x, curve_y, curve_z, point_0))
+                                            curve_x, curve_y, curve_z, point_0,color = color))
 
             self.plotter.reset_camera()
 
@@ -446,7 +446,7 @@ class Window(MainWindow):
 
             
             self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array)], 
-                                                curve_x, curve_y, curve_z, point_0))
+                                                curve_x, curve_y, curve_z, point_0, color = color))
 
 
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
@@ -761,7 +761,6 @@ class Window(MainWindow):
                     self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
                 else:
                     self.plotter.add_mesh(j.arrow, color='blue')
-
 
 
 

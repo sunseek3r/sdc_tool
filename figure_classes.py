@@ -21,20 +21,22 @@ class ArrowLabel():
 
 
 class ConicSurface(Figure):
-    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0):
-        Figure.__init__(self, mesh, 'Conic Surface', labels)
+    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0, color):
+        Figure.__init__(self, mesh, 'Conic Surface', labels, color)
         self.curve_x = curve_x
         self.curve_y = curve_y
         self.curve_z = curve_z
         self.point_0 = point_0
+        self.color = color
 
 class CylindricSurface(Figure):
-    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0):
-        Figure.__init__(self, mesh, 'Cylindrical Surface', labels)
+    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0, color):
+        Figure.__init__(self, mesh, 'Cylindrical Surface', labels, color)
         self.curve_x = curve_x
         self.curve_y = curve_y
         self.curve_z = curve_z
         self.point_0 = point_0
+        self.color = color
 
 class Surface(Figure):
     def __init__(self, A, B, C, D, mesh, labels, color):
@@ -44,5 +46,5 @@ class Surface(Figure):
         self.C = C
         self.D = D
         #self.fig_type = 'Surface'
-
+        self.color = color
 
