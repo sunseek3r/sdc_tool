@@ -626,6 +626,12 @@ class Window(MainWindow):
                 #обчислюємо точки кривої оберненої на кут theta
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
+            
+            
+            x, y, z = zip(*points)
+            x = np.array(x)
+            y = np.array(y)
+            z = np.array(z)
             # Calculate midpoint coordinates
            
 
@@ -648,7 +654,6 @@ class Window(MainWindow):
             label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
             self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)], color=color))
 
-            self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
 
             #обчислюємо напрямний вектор для прямої  
             point_0 = [float(i) for i in point_0]
@@ -684,7 +689,6 @@ class Window(MainWindow):
             array = np.vstack((point_0, array, mid_point_array))
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
-            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
 
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
@@ -705,7 +709,8 @@ class Window(MainWindow):
                 poly = pv.PolyData(points[i:i+step])
                 
                 animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
-                    #animation_plotter.close()
+                animation_plotter.render()
+                animation_plotter.write_frame()
         except Exception as e:
             return
 
@@ -757,8 +762,6 @@ class Window(MainWindow):
                 else:
                     self.plotter.add_mesh(j.arrow, color='blue')
 
-                #animation_plotter.render()
-                #animation_plotter.write_frame()
 
 
 
