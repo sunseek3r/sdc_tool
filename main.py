@@ -372,7 +372,7 @@ class Window(MainWindow):
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
             self.meshes.append(ConicSurface(grid, [PointLabel(label, array)], 
-                                            curve_x, curve_y, curve_z, point_0))
+                                            curve_x, curve_y, curve_z, point_0,color = color))
 
             self.plotter.reset_camera()
 
@@ -446,7 +446,7 @@ class Window(MainWindow):
 
             
             self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array)], 
-                                                curve_x, curve_y, curve_z, point_0))
+                                                curve_x, curve_y, curve_z, point_0, color = color))
 
 
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
@@ -757,9 +757,8 @@ class Window(MainWindow):
                 else:
                     self.plotter.add_mesh(j.arrow, color='blue')
 
-                animation_plotter.render()
-                animation_plotter.write_frame()
-
+                #animation_plotter.render()
+                #animation_plotter.write_frame()
 
 
 
