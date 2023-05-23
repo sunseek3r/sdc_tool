@@ -343,8 +343,18 @@ class Window(MainWindow):
                 msg.setText("Some error occured, try again")
                 return
             
-            grid = pv.PolyData(list(zip(x, y, z)))
-
+            faces = []
+            curve_size = len(x_inst)
+            for i in range(len(r_values)-1):
+                for j in range(curve_size-1):
+                    faces.append(4)
+                    faces.append(i*curve_size+j)
+                    faces.append(i*curve_size+(j+1))
+                    faces.append((i+1)*curve_size+j)
+                    faces.append((i+1)*curve_size+(j+1))
+                    
+            #grid = pv.PolyData(list(zip(x,y,z)))
+            grid = pv.PolyData(list(zip(x,y,z)), faces=faces)
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
 
@@ -355,7 +365,7 @@ class Window(MainWindow):
             mid_point = [point_0[0] + 5 * (curve_x[0] - point_0[0]), point_0[1] + 5 * (curve_y[0] - point_0[1]), point_0[2] + 5 * (curve_z[0] - point_0[2])]
             # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
-            self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+            #self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
 
             self.animate(grid.points)
             
@@ -491,7 +501,7 @@ class Window(MainWindow):
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("No intersection found")
             self.plotter.add_mesh(intersection, color='white', line_width=10)
-            self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+            self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
             self.text_box.addItem(QListWidgetItem("Intersection"))
 
         
@@ -504,7 +514,7 @@ class Window(MainWindow):
                     intersection = pv.PolyData(overlap_points)
             
                     self.plotter.add_mesh(intersection, color='white', line_width=10)
-                    self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+                    self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
                     self.text_box.addItem(QListWidgetItem("Intersection"))
                 else:
                     msg = QMessageBox()
@@ -518,7 +528,7 @@ class Window(MainWindow):
                 z = grid_2.point_0[2] * k + grid_2.curve_z
                 intersection = pv.PolyData(list(zip(x, y, z)))
                 self.plotter.add_mesh(intersection, color='white', line_width=10)
-                self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+                self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
                 self.text_box.addItem(QListWidgetItem("Intersection"))
 
 
@@ -540,7 +550,7 @@ class Window(MainWindow):
             intersection = pv.PolyData(overlap_points)
             
             self.plotter.add_mesh(intersection, color='white', line_width=10)
-            self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+            self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
             self.text_box.addItem(QListWidgetItem("Intersection"))
 
     def delete_figures(self):
