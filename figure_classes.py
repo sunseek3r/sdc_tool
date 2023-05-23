@@ -19,24 +19,22 @@ class ArrowLabel():
     def __init__(self, arrow):
         self.arrow = arrow
 
-class Line(Figure):
-    """
-        This is a class for Line figure
-    """
 
+class ConicSurface(Figure):
+    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0):
+        Figure.__init__(self, mesh, 'Conic Surface', labels)
+        self.curve_x = curve_x
+        self.curve_y = curve_y
+        self.curve_z = curve_z
+        self.point_0 = point_0
 
-    def __init__(self, d1, d2, mesh):
-        Figure.__init__(self, mesh)
-        self.d1 = d1
-        self.d2 = d2
-        self.type = 'Line'
-
-
-    def draw(self, ax):
-        x_values = [self.d1[0], self.d2[0]]
-        y_values = [self.d1[1], self.d2[1]]
-        z_values = [self.d1[2], self.d2[2]]
-
+class CylindricSurface(Figure):
+    def __init__(self, mesh, labels, curve_x, curve_y, curve_z, point_0):
+        Figure.__init__(self, mesh, 'Cylindrical Surface', labels)
+        self.curve_x = curve_x
+        self.curve_y = curve_y
+        self.curve_z = curve_z
+        self.point_0 = point_0
 
 class Surface(Figure):
     def __init__(self, A, B, C, D, mesh, labels, color):
