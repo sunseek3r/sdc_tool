@@ -3,10 +3,11 @@
 """
 
 class Figure():
-    def __init__(self, mesh, fig_type, labels):
+    def __init__(self, mesh, fig_type, labels, color):
         self.mesh = mesh
         self.fig_type = fig_type
         self.labels = labels
+        self.color = color
 
 
 class PointLabel():
@@ -36,8 +37,8 @@ class CylindricSurface(Figure):
         self.point_0 = point_0
 
 class Surface(Figure):
-    def __init__(self, A, B, C, D, mesh, labels):
-        Figure.__init__(self, mesh, 'Surface', labels)
+    def __init__(self, A, B, C, D, mesh, labels, color):
+        Figure.__init__(self, mesh, 'Surface', labels, color)
         self.A = A
         self.B = B
         self.C = C

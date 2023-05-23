@@ -4,7 +4,7 @@ import os
 os.environ["QT_API"] = "pyqt5"
 
 #імпортуємо всі необхідні бібліотеки
-
+from random import randint
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QListWidgetItem, QListWidget, QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QTextEdit, QPushButton, QDialog, QInputDialog,QMessageBox
 from PyQt5.QtCore import Qt
@@ -43,7 +43,7 @@ class Window(MainWindow):
         self.setGeometry(50, 50, 800, 600)
 
         self.meshes = []
-
+        
         main_widget = QWidget(self)
         main_layout = QHBoxLayout(main_widget)
 
@@ -98,7 +98,10 @@ class Window(MainWindow):
         delete_button.triggered.connect(self.delete_figures)
         tools_menu.addAction(delete_button)
 
-        
+        pick_button = QtWidgets.QAction('Select', self)
+        pick_button.triggered.connect(self.pick_figure)
+        tools_menu.addAction(pick_button)
+
         #Створюємо та додаємо до лівого віджета кнопку для побудови лінії за двома точками
         line_button = QPushButton("Line", self)
         line_button.clicked.connect(self.add_line)
@@ -135,7 +138,19 @@ class Window(MainWindow):
         self.setCentralWidget(main_widget)
         self.show()
 
+    def get_color(self):
+        return '#%06X' % randint(0, 0xFFFFFF)
     
+    def change_brightness(self,hex_color, brightness_offset=50):
+        rgb_hex = [ hex_color[x : x + 2] for x in [1, 3, 5] ]
+        
+        if int(rgb_hex[0], 16) < brightness_offset and int(rgb_hex[1], 16) < brightness_offset and int(rgb_hex[2], 16) < brightness_offset:
+            new_rgb_int = [ int(hex_value, 16) + 2 * brightness_offset for hex_value in rgb_hex ]
+        else:
+            new_rgb_int = [ int(hex_value, 16) - brightness_offset for hex_value in rgb_hex ]
+            
+        new_rgb_int = [min([255, max([0, i])]) for i in new_rgb_int]
+        return "#" + "".join(['0' + hex(i)[2:] if len(hex(i)[2:]) < 2 else hex(i)[2:] for i in new_rgb_int])
     #Функція для побудови прямої за двома точками
     def add_line(self):
         self.temp_line += 1
@@ -186,13 +201,13 @@ class Window(MainWindow):
 
         #будуємо лінію
         line = pv.Line(start_point, end_point)
-
-        self.plotter.add_mesh(line, color='black', line_width=5)
+        color = self.get_color()
+        self.plotter.add_mesh(line, color = color, line_width=5)
         middle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
-        self.plotter.add_mesh(line, color='black', line_width=5, label = "Line")
+        self.plotter.add_mesh(line, color = color, line_width=5, label = "Line")
         label = ["Line " + str(self.temp_line)]
         self.plotter.add_point_labels(middle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
-        self.meshes.append(Figure(line, 'line', labels=[PointLabel([label], middle_point)]))
+        self.meshes.append(Figure(line, 'line', labels=[PointLabel([label], middle_point)], color = color))
         self.text_box.addItem(QListWidgetItem(f"Line: {point1}, {point2}"))
         self.plotter.reset_camera()
 
@@ -234,9 +249,9 @@ class Window(MainWindow):
 
         #будуємо площину
         grid = pv.StructuredGrid(x, y, z)
-
+        color = self.get_color()
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
-        self.plotter.add_mesh(grid, opacity=0.7, color='red')
+        self.plotter.add_mesh(grid, opacity=0.7, color=color)
         self.animate(grid.points, step=10000)
 
         label = ["Surface " + str(self.temp_surface)]
@@ -247,7 +262,7 @@ class Window(MainWindow):
         self.plotter.add_point_labels(point_c,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
         arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
         self.plotter.add_mesh(arrow, color='blue')
-        self.meshes.append(Surface(A, B, C, D, grid, labels=[ArrowLabel(arrow), PointLabel(label, point_c)]))
+        self.meshes.append(Surface(A, B, C, D, grid, labels=[ArrowLabel(arrow), PointLabel(label, point_c)], color = color))
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
@@ -276,32 +291,18 @@ class Window(MainWindow):
                     return
             #будуємо та відображаємо криву
             grid = pv.StructuredGrid(x, y, z)
-            self.plotter.add_mesh(grid, color='green', line_width=5)
+            color = self.get_color()
+            self.plotter.add_mesh(grid, color=color, line_width=5,)
             array = [x[0],y[0],z[0]]
             label = ["Curve " + str(self.temp_curve)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
-            self.meshes.append(Figure(grid, 'curve'))
+            self.meshes.append(Figure(grid, 'curve', color = color))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
     #Функція для побудови конічної поверхні
     def add_conic_surface(self):
         self.temp_conic += 1
-        #def _get_multiplier(directional_coor, anchor_coor, coor_type):
-            #if coor_type == "X":
-               # bounds = self.settings.x_bounds
-            #elif coor_type == "Y":
-                #bounds = self.settings.y_bounds
-            #elif coor_type == "Z":
-                #bounds = self.settings.z_bounds
-            
-            #if directional_coor == 0:
-                #return 1e9 # cannot extend with this coordinate => return infinity
-
-            #if directional_coor < 0:
-                #return (bounds[0] - anchor_coor) / directional_coor
-            #else:
-                #return (bounds[1] - anchor_coor) / directional_coor
             
         dialog = PointDialog("Input point 0")
         point_0 = []
@@ -343,6 +344,10 @@ class Window(MainWindow):
                 return
             
             grid = pv.PolyData(list(zip(x, y, z)))
+
+            color = self.get_color()
+            self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
+
             start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
             end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
             line = pv.Line(start_point, end_point)
@@ -351,6 +356,7 @@ class Window(MainWindow):
             # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
             self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
+
             self.animate(grid.points)
             
             array = np.array(
@@ -364,8 +370,10 @@ class Window(MainWindow):
             label = ["point c " + str(self.temp_cylindric),"point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
+
             self.meshes.append(ConicSurface(grid, [PointLabel(label, array)], 
                                             curve_x, curve_y, curve_z, point_0))
+
             self.plotter.reset_camera()
 
     #Функція для побудови циліндричної поверхні
@@ -413,6 +421,10 @@ class Window(MainWindow):
                 z = np.append(z, point_0[2]*r + curve_z)
 
             grid = pv.PolyData(list(zip(x, y, z)))
+
+            color = self.get_color()
+            self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
+
             start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
             end_point = [curve_x[0] - 10 * point_0[0], curve_y[0] - 10 * point_0[1], curve_z[0] - 10 * point_0[2]]
             line = pv.Line(start_point, end_point)
@@ -423,6 +435,7 @@ class Window(MainWindow):
             # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
             self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
+
             self.animate(grid.points)
 
             array = np.vstack((array,mid_point_array))
@@ -430,9 +443,11 @@ class Window(MainWindow):
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
+
             
             self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array)], 
                                                 curve_x, curve_y, curve_z, point_0))
+
 
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -540,19 +555,19 @@ class Window(MainWindow):
         for i in self.meshes:
             match i.fig_type:
                 case 'line':
-                    self.plotter.add_mesh(i.mesh, color='black', line_width=5)
+                    self.plotter.add_mesh(i.mesh, color=i.color, line_width=5)
                 case 'Surface':
-                    self.plotter.add_mesh(i.mesh, color='red', opacity=0.7)
+                    self.plotter.add_mesh(i.mesh, color=i.color, opacity=0.7)
                 case 'curve':
-                    self.plotter.add_mesh(i.mesh, color='blue', line_width=5)
+                    self.plotter.add_mesh(i.mesh, color=i.color, line_width=5)
                 case 'Conic Surface':
-                    self.plotter.add_mesh(i.mesh, color='purple', line_width=5, opacity=0.5)
+                    self.plotter.add_mesh(i.mesh, color=i.color, line_width=5, opacity=0.5)
                 case 'Cylindrical Surface':
-                    self.plotter.add_mesh(i.mesh, color='yellow', line_width=5, opacity=0.5)
+                    self.plotter.add_mesh(i.mesh, color=i.color, line_width=5, opacity=0.5)
                 case 'Intersection':
                     self.plotter.add_mesh(i.mesh, color='white', line_width=10)
                 case 'Surface of revolution':
-                    self.plotter.add_mesh(i.mesh, color='lightblue', opacity=0.25)
+                    self.plotter.add_mesh(i.mesh, color=i.color, opacity=0.25)
             print(len(i.labels))
             for j in i.labels:
                 if isinstance(j, PointLabel):
@@ -562,7 +577,7 @@ class Window(MainWindow):
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):
-
+        
         self.temp_surface_of_revolution += 1
         def _get_multiplier(dir, coord, bound, t):
             if dir == 0:
@@ -597,7 +612,8 @@ class Window(MainWindow):
                 return
 
             grid = pv.StructuredGrid(x_g, y_g, z_g)
-            self.plotter.add_mesh(grid, color='green', line_width=9)
+            color = self.get_color()
+            self.plotter.add_mesh(grid, color=color, line_width=9)
 
             arrow = pv.Arrow(point_0, vector_n, scale = 'auto')
 
@@ -620,6 +636,18 @@ class Window(MainWindow):
             self.animate(points)
 
             surface = pv.PolyData(points)
+
+            color = self.get_color()
+            self.plotter.add_mesh(surface, color=color, opacity=0.25)
+            
+            array = np.array(
+                [[x[0],y[0],z[0]],[x_g[0],y_g[0],z_g[0]], [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]],
+                 [x[-1],y[-1],z[-1]]]
+                )
+         
+            label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)], color=color))
+
             self.plotter.add_mesh(surface, color="lightblue", opacity=0.25)
 
             #обчислюємо напрямний вектор для прямої  
@@ -657,6 +685,7 @@ class Window(MainWindow):
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
             self.meshes.append(Figure(surface, 'Surface of revolution', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
+
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
          
@@ -664,24 +693,75 @@ class Window(MainWindow):
         
 
 
+
     def animate(self, points, step=1000):
         try:
             animation_plotter = pv.Plotter()
             animation_plotter.open_gif('points.gif')
+
             
 
             for i in range(0, len(points) - step, step):
                 poly = pv.PolyData(points[i:i+step])
                 
                 animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
+                    #animation_plotter.close()
+        except Exception as e:
+            return
+
+        #animation_plotter.close()
+
+    def pick_figure(self):        
+        items = self.text_box.selectedIndexes()
+        indexes = [i.row() for i in items]
+        
+        self.plotter.clear()
+        self.plotter.show_grid()
+        for i, figure in enumerate(self.meshes):
+            if i in indexes:
+                match figure.fig_type:
+                    case 'line':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), line_width=5)
+                    case 'Surface':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), opacity=0.95)
+                    case 'curve':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), line_width=10)
+                    case 'Conic Surface':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), line_width=5, opacity=0.9)
+                    case 'Cylindrical Surface':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), line_width=5, opacity=0.9)
+                    case 'Intersection':
+                        self.plotter.add_mesh(figure.mesh, color='white', point_size=10)
+                    case 'Surface of revolution':
+                        self.plotter.add_mesh(figure.mesh, color=self.change_brightness(figure.color), opacity=0.9)
+            else:
+                match figure.fig_type:
+                    case 'line':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, line_width=5)
+                    case 'Surface':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, opacity=0.7)
+                    case 'curve':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, line_width=5)
+                    case 'Conic Surface':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, line_width=5, opacity=0.25)
+                    case 'Cylindrical Surface':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, line_width=5, opacity=0.25)
+                    case 'Intersection':
+                        self.plotter.add_mesh(figure.mesh, color='white', point_size=10)
+                    case 'Surface of revolution':
+                        self.plotter.add_mesh(figure.mesh, color=figure.color, opacity=0.25)
+            #print(len(i.labels))
+            for j in figure.labels:
+                if isinstance(j, PointLabel):
+                    self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
+                else:
+                    self.plotter.add_mesh(j.arrow, color='blue')
 
                 animation_plotter.render()
                 animation_plotter.write_frame()
 
-            #animation_plotter.close()
-        except Exception as e:
-            return
-            
+
+
 
 
 
