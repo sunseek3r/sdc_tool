@@ -39,6 +39,9 @@ def compute_parameter(functions):
     ts = np.arange(-50, 50, 0.1)
 
     #перетворюємо введені користувачем функції у лямбда-вирази
+    for i in range(3):
+        if 't' not in functions[i]:
+            raise ValueError(f"No t parameter in {i+1}th function. If you want to specify a constant use 0*t+C")
     f_x = lambdify(t, functions[0], 'numpy')
     f_y = lambdify(t, functions[1], 'numpy')
     f_z = lambdify(t, functions[2], 'numpy')

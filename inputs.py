@@ -47,25 +47,6 @@ class PointDialog(QDialog):
     def getInputs(self):
         return [float(i) for i in (self.x1.text(), self.y1.text(), self.z1.text())]
     
-#Клас діалогового вікна для функції
-class FunctionDialog(QDialog):
-    def __init__(self, title, parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle(title)
-        self.function = QLineEdit(self)
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self);
-
-        layout = QFormLayout(self)
-        layout.addRow("function", self.function)
-        layout.addWidget(buttonBox)
-
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
- 
-    #Функція, що повертає введені користувачем дані
-    def getInputs(self):
-        return self.function.text()
 
 #Клас діалогового вікна для вектора
 class VectorLineDialog(QDialog):

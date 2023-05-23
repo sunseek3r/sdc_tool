@@ -12,8 +12,8 @@ from PyQt5.QtWidgets import QLineEdit
 from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
-from figure_classes import Figure, Line, Surface, ArrowLabel, PointLabel
-from inputs import SphereDialog, PointDialog, FunctionDialog, VectorLineDialog, ParameterDialog
+from figure_classes import Figure, Surface, ArrowLabel, PointLabel, ConicSurface, CylindricSurface
+from inputs import SphereDialog, PointDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
 from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix, sort_points
 from scipy.spatial import cKDTree
@@ -109,11 +109,6 @@ class Window(MainWindow):
         surface_button.clicked.connect(self.add_surface)
         left_layout.addWidget(surface_button)
         
-
-        #Створюємо та додаємо до лівого віджета кнопку для побудови кривої
-        curve_button = QPushButton("Curve", self)
-        curve_button.clicked.connect(self.add_curve)
-        left_layout.addWidget(curve_button)
 
         #Створюємо та додаємо до лівого віджета кнопку для побудови параметричної кривої
         parameters_button = QPushButton("Curve by parameter", self)
@@ -256,32 +251,8 @@ class Window(MainWindow):
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
-    #Функція для побудови кривої
-    def add_curve(self):
 
         self.temp_curve += 1
-
-
-        #визиваємо діалогове вікно для вводу функції
-        dialog = FunctionDialog("Input a function in form i.e. \"f(z)=2*x + 3*y\"")
-        func = ""
-        if dialog.exec():
-            func = dialog.getInputs()
-
-        print(func)
-
-        #будуємо та відображаємо криву
-        if func != "":
-            x, y, z = compute_points(func, self.settings.x_bounds, self.settings.y_bounds)
-            print(type(x), type(y), type(z))
-            grid = pv.StructuredGrid(x, y, z)
-          
-           
-            self.plotter.add_mesh(grid, color='blue', line_width=5)
-            
-            self.meshes.append(Figure(grid, 'curve'))
-            self.text_box.addItem(QListWidgetItem(func))
-            self.plotter.reset_camera()
 
     #Функція для побудови параметричної кривої
     def add_curve_by_t(self):
@@ -292,8 +263,17 @@ class Window(MainWindow):
             functions = dialog.getInputs()
 
             #обчислюємо точки кривої
-            x, y, z = compute_parameter(functions)
-            
+            try:
+                x, y, z = compute_parameter(functions)
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText(str(e))
+                msg.setWindowTitle("Error")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                returnValue = msg.exec()
+                if returnValue == QMessageBox.Ok:
+                    return
             #будуємо та відображаємо криву
             grid = pv.StructuredGrid(x, y, z)
             self.plotter.add_mesh(grid, color='green', line_width=5)
@@ -332,11 +312,17 @@ class Window(MainWindow):
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
-
-            curve_x, curve_y, curve_z = compute_parameter(functions)
-            
-            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
-            self.plotter.add_mesh(grid, color='green', line_width=9)
+            try:
+                curve_x, curve_y, curve_z = compute_parameter(functions)
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText(str(e))
+                msg.setWindowTitle("Error")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                returnValue = msg.exec()
+                if returnValue == QMessageBox.Ok:
+                    return
 
             x = np.array([])
             y = np.array([])
@@ -354,6 +340,8 @@ class Window(MainWindow):
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("Some error occured, try again")
+                return
+            
             grid = pv.PolyData(list(zip(x, y, z)))
             start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
             end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
@@ -376,7 +364,8 @@ class Window(MainWindow):
             label = ["point c " + str(self.temp_cylindric),"point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
-            self.meshes.append(Figure(grid, 'Conic Surface', labels=[PointLabel(label, array)]))
+            self.meshes.append(ConicSurface(grid, [PointLabel(label, array)], 
+                                            curve_x, curve_y, curve_z, point_0))
             self.plotter.reset_camera()
 
     #Функція для побудови циліндричної поверхні
@@ -393,13 +382,25 @@ class Window(MainWindow):
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
-            curve_x, curve_y, curve_z = compute_parameter(functions)
-
+            try:
+                curve_x, curve_y, curve_z = compute_parameter(functions)
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText(str(e))
+                msg.setWindowTitle("Error")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                returnValue = msg.exec()
+                if returnValue == QMessageBox.Ok:
+                    return
             first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
 
             grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
             self.plotter.add_mesh(grid, color='green', line_width=9)
-            
+            if np.isclose(np.linalg.norm(point_0), 0):
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Length of vector can't be zero")
             x = np.array([])
             y = np.array([])
             z = np.array([])
@@ -429,7 +430,9 @@ class Window(MainWindow):
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point p " + str(self.temp_cylindric),"guide curve " + str(self.temp_cylindric),"creative line " + str(self.temp_cylindric)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
-            self.meshes.append(Figure(grid, 'Cylindrical Surface', labels=[ArrowLabel(arrow),PointLabel(label, array)]))
+            
+            self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array)], 
+                                                curve_x, curve_y, curve_z, point_0))
 
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
@@ -457,20 +460,73 @@ class Window(MainWindow):
         C = grid_1.C
         D = grid_1.D
         
-        #Проходимо циклом по всім точкам присітиву та перевіряємо чи належать вони площині
-        points = grid_2.mesh.points
-        overlap_points = []
-        delta = 1e-1
-        for point in points:
-            if np.abs(A*point[0] + B*point[1] + C*point[2] + D) < delta:
-                overlap_points.append(point)
-        overlap_points = sort_points(overlap_points)
-        #Відображаємо знайдений перетин
-        intersection = pv.MultipleLines(points=overlap_points)
+        print(grid_2.fig_type)
+        if grid_2.fig_type == 'Conic Surface':
+            denominator = A*(grid_2.curve_x - grid_2.point_0[0]) + B*(grid_2.curve_y - grid_2.point_0[1]) + C*(grid_2.curve_z - grid_2.point_0[2])
+            numerator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2] + D
+            p = -numerator / denominator
+
+            x = p*(grid_2.curve_x - grid_2.point_0[0]) + grid_2.point_0[0]
+            y = p*(grid_2.curve_y - grid_2.point_0[1]) + grid_2.point_0[1]
+            z = p*(grid_2.curve_z - grid_2.point_0[2]) + grid_2.point_0[2]
+
+            intersection = pv.PolyData(list(zip(x, y, z)))
+            if intersection.points.size == 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("No intersection found")
+            self.plotter.add_mesh(intersection, color='white', line_width=10)
+            self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+            self.text_box.addItem(QListWidgetItem("Intersection"))
+
         
-        self.plotter.add_mesh(intersection, color='white', line_width=10)
-        self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
-        self.text_box.addItem(QListWidgetItem("Intersection"))
+        if grid_2.fig_type == 'Cylindrical Surface':
+            print("HERE")
+            denominator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2]
+            if np.isclose(denominator, 0):
+                if np.isclose(A*grid_2.curve_x[0] + B*grid_2.curve_y[0] + C*grid_2.curve_z[0] + D, 0):
+                    overlap_points = grid_2.mesh.points
+                    intersection = pv.PolyData(overlap_points)
+            
+                    self.plotter.add_mesh(intersection, color='white', line_width=10)
+                    self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+                    self.text_box.addItem(QListWidgetItem("Intersection"))
+                else:
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Critical)
+                    msg.setText("No intersection found")
+            else:
+                k = A * grid_2.curve_x + B * grid_2.curve_y + C*grid_2.curve_z + D
+                k = -k / denominator
+                x = grid_2.point_0[0] * k + grid_2.curve_x
+                y = grid_2.point_0[1] * k + grid_2.curve_y
+                z = grid_2.point_0[2] * k + grid_2.curve_z
+                intersection = pv.PolyData(list(zip(x, y, z)))
+                self.plotter.add_mesh(intersection, color='white', line_width=10)
+                self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+                self.text_box.addItem(QListWidgetItem("Intersection"))
+
+
+        if grid_2.fig_type == 'Surface of revolution':
+            #Проходимо циклом по всім точкам присітиву та перевіряємо чи належать вони площині
+            points = grid_2.mesh.points
+            overlap_points = []
+            delta = 1e-1
+            for point in points:
+                if np.abs(A*point[0] + B*point[1] + C*point[2] + D) < delta:
+                    overlap_points.append(point)
+            if len(overlap_points) == 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("No intersection found")
+                return
+            overlap_points = sort_points(overlap_points)
+            #Відображаємо знайдений перетин
+            intersection = pv.PolyData(overlap_points)
+            
+            self.plotter.add_mesh(intersection, color='white', line_width=10)
+            self.meshes.append(Figure(intersection, 'Intersection', labels=[]))
+            self.text_box.addItem(QListWidgetItem("Intersection"))
 
     def delete_figures(self):
         items = self.text_box.selectedIndexes()
@@ -532,7 +588,13 @@ class Window(MainWindow):
         if dialog.exec():
             #обчислюємо точки кривої
             functions = dialog.getInputs()
-            x_g, y_g, z_g = compute_parameter(functions)
+            try:
+                x_g, y_g, z_g = compute_parameter(functions)
+            except Exception as e:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText(str(e))
+                return
 
             grid = pv.StructuredGrid(x_g, y_g, z_g)
             self.plotter.add_mesh(grid, color='green', line_width=9)
@@ -603,20 +665,22 @@ class Window(MainWindow):
 
 
     def animate(self, points, step=1000):
-        
-        animation_plotter = pv.Plotter()
-        animation_plotter.open_gif('points.gif')
-        
-
-        for i in range(0, len(points) - step, step):
-            poly = pv.PolyData(points[i:i+step])
+        try:
+            animation_plotter = pv.Plotter()
+            animation_plotter.open_gif('points.gif')
             
-            animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
 
-            animation_plotter.render()
-            animation_plotter.write_frame()
+            for i in range(0, len(points) - step, step):
+                poly = pv.PolyData(points[i:i+step])
+                
+                animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
 
-        #animation_plotter.close()
+                animation_plotter.render()
+                animation_plotter.write_frame()
+
+            #animation_plotter.close()
+        except Exception as e:
+            return
             
 
 
