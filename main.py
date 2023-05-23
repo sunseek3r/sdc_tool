@@ -296,7 +296,7 @@ class Window(MainWindow):
             array = [x[0],y[0],z[0]]
             label = ["Curve " + str(self.temp_curve)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
-            self.meshes.append(Figure(grid, 'curve', color = color))
+            self.meshes.append(Figure(grid, 'curve', labels=[PointLabel(label, array)],color = color))
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
             self.plotter.reset_camera()
 
