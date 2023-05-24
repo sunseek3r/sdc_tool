@@ -87,6 +87,7 @@ class Window(MainWindow):
         self.addToolBar(self.plotter.default_camera_tool_bar)
         self.addToolBar(self.plotter.saved_cameras_tool_bar)
 
+        #Додаємо меню та всі необхідні кнопки до нього
         self.setMenuBar(self.plotter.main_menu)
         mainMenu = self.menuBar()
         tools_menu = mainMenu.addMenu('Custom Tools')
@@ -138,9 +139,11 @@ class Window(MainWindow):
         self.setCentralWidget(main_widget)
         self.show()
 
+    #Функція, що повертає випадковий колір
     def get_color(self):
         return '#%06X' % randint(0, 0xFFFFFF)
     
+    #Функція для зміни яркості кольору фігури
     def change_brightness(self,hex_color, brightness_offset=50):
         rgb_hex = [ hex_color[x : x + 2] for x in [1, 3, 5] ]
         
@@ -151,6 +154,7 @@ class Window(MainWindow):
             
         new_rgb_int = [min([255, max([0, i])]) for i in new_rgb_int]
         return "#" + "".join(['0' + hex(i)[2:] if len(hex(i)[2:]) < 2 else hex(i)[2:] for i in new_rgb_int])
+    
     #Функція для побудови прямої за двома точками
     def add_line(self):
         self.temp_line += 1
@@ -205,6 +209,7 @@ class Window(MainWindow):
         self.plotter.add_mesh(line, color = color, line_width=5)
         middle_point = [(point2_coor + point1_coor)/2 for point1_coor, point2_coor in zip(start_point, end_point)]
         self.plotter.add_mesh(line, color = color, line_width=5, label = "Line")
+        #Додаємо підписи
         label = ["Line " + str(self.temp_line)]
         self.plotter.add_point_labels(middle_point,label,italic=True,font_size=10,point_color='black',point_size=1,render_points_as_spheres=True,always_visible=True,shadow=True)
         self.meshes.append(Figure(line, 'line', labels=[PointLabel([label], middle_point)], color = color))
@@ -250,7 +255,8 @@ class Window(MainWindow):
         #будуємо площину
         grid = pv.StructuredGrid(x, y, z)
         color = self.get_color()
-        #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
+
+        #відображаємо побудовану площину на графіку та запускаємо анімацію
         self.plotter.add_mesh(grid, opacity=0.7, color=color)
         self.animate(grid.points, step=10000)
 
@@ -258,7 +264,7 @@ class Window(MainWindow):
 
         #label = ["Line " + str(self.temp_surface)]
 
-        
+        #додаємо підписи
         self.plotter.add_point_labels(point_c,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
         arrow = pv.Arrow(point_c, vector_n, scale = 'auto')
         self.plotter.add_mesh(arrow, color='blue')
@@ -266,18 +272,17 @@ class Window(MainWindow):
         self.text_box.addItem(QListWidgetItem("surface"))
         self.plotter.reset_camera()
 
-
-        self.temp_curve += 1
-
     #Функція для побудови параметричної кривої
     def add_curve_by_t(self):
+        self.temp_curve += 1
+
         #визиваємо діалогове вікно для вводу функції
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
 
-            #обчислюємо точки кривої
+            #обчислюємо точки кривої, якщо це зробити неможливо виводимо повідомлення про неправильні вхідні дані
             try:
                 x, y, z = compute_parameter(functions)
             except Exception as e:
@@ -293,6 +298,7 @@ class Window(MainWindow):
             grid = pv.StructuredGrid(x, y, z)
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5,)
+            #додаємо підписи
             array = [x[0],y[0],z[0]]
             label = ["Curve " + str(self.temp_curve)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
@@ -303,16 +309,19 @@ class Window(MainWindow):
     #Функція для побудови конічної поверхні
     def add_conic_surface(self):
         self.temp_conic += 1
-            
+        
+        #визиваємо діалогове вікно для вводу точки
         dialog = PointDialog("Input point 0")
         point_0 = []
         if dialog.exec():
             point_0 = dialog.getInputs()
 
+        #визиваємо діалогове вікно для вводу функцій
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
+            #обчислюємо точки кривої, якщо це зробити неможливо виводимо повідомлення про неправильні вхідні дані
             try:
                 curve_x, curve_y, curve_z = compute_parameter(functions)
             except Exception as e:
@@ -332,6 +341,7 @@ class Window(MainWindow):
             x_inst = curve_x - point_0[0]
             y_inst = curve_y - point_0[1]
             z_inst = curve_z - point_0[2]
+            #обчислюємо точки поверхні
             for r in r_values:
                 x = np.append(x, point_0[0] + r * (x_inst))
                 y = np.append(y, point_0[1] + r * (y_inst))
@@ -343,6 +353,7 @@ class Window(MainWindow):
                 msg.setText("Some error occured, try again")
                 return
             
+            #створюємо масив граней фігури
             faces = []
             curve_size = len(x_inst)
             for i in range(len(r_values)-1):
@@ -353,14 +364,16 @@ class Window(MainWindow):
                     faces.append((i+1)*curve_size+j)
                     faces.append((i+1)*curve_size+(j+1))
 
+            #відображаємо напрямну
             grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
             self.plotter.add_mesh(grid, color='green', line_width=9)
 
-            #grid = pv.PolyData(list(zip(x,y,z)))
+            #будуємо та відображаємо поверхню
             grid = pv.PolyData(list(zip(x,y,z)), faces=faces)
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
 
+            #будуємо та відображаємо твірну
             start_point = [point_0[0] + 10 * (curve_x[0] - point_0[0]), point_0[1] + 10 * (curve_y[0] - point_0[1]), point_0[2] + 10 * (curve_z[0] - point_0[2])]
             end_point = [point_0[0] - 10 * (curve_x[0] - point_0[0]), point_0[1] - 10 * (curve_y[0] - point_0[1]), point_0[2] - 10 * (curve_z[0] - point_0[2])]
             line = pv.Line(start_point, end_point)
@@ -368,8 +381,8 @@ class Window(MainWindow):
             mid_point = [point_0[0] + 5 * (curve_x[0] - point_0[0]), point_0[1] + 5 * (curve_y[0] - point_0[1]), point_0[2] + 5 * (curve_z[0] - point_0[2])]
             # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
-            #self.plotter.add_mesh(grid, color='purple', line_width=5, opacity=0.5)
 
+            #запускаємо анімацію
             self.animate(grid.points)
             
             array = np.array(
@@ -380,6 +393,7 @@ class Window(MainWindow):
             # Vertically stack the midpoint array with the existing array
             array = np.vstack((point_0,array,mid_point_array))
          
+            #додаємо підписи
             label = ["point c " + str(self.temp_cylindric),"point p " + str(self.temp_conic),"guide curve " + str(self.temp_conic),"creative line " + str(self.temp_conic)]
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
@@ -392,6 +406,8 @@ class Window(MainWindow):
     #Функція для побудови циліндричної поверхні
     def add_cylindrical_surface(self):
         self.temp_cylindric += 1
+
+        #визиваємо діалогове вікно для вводу напрямного вектора
         dialog = VectorLineDialog()
         vector = []
         if dialog.exec():
@@ -399,10 +415,12 @@ class Window(MainWindow):
 
         point_0 = [float(i) for i in vector]
 
+        #визиваємо діалогове вікно для вводу функцій
         dialog = ParameterDialog("Input parametric function i.e. in form \"sin(t) and so on\"")
         functions = []
         if dialog.exec():
             functions = dialog.getInputs()
+            #обчислюємо точки кривої, якщо це зробити неможливо виводимо повідомлення про неправильні вхідні дані
             try:
                 curve_x, curve_y, curve_z = compute_parameter(functions)
             except Exception as e:
@@ -416,8 +434,11 @@ class Window(MainWindow):
                     return
             first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
 
+            #відображаємо напрямну
             grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
             self.plotter.add_mesh(grid, color='green', line_width=9)
+
+            #перевіряємо що вектор ненульовий
             if np.isclose(np.linalg.norm(point_0), 0):
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -427,12 +448,13 @@ class Window(MainWindow):
             z = np.array([])
 
             r_values = np.arange(-10, 10, 0.1)
-            
+            #обчислюємо точки поверхні
             for r in r_values:
                 x = np.append(x, point_0[0]*r + curve_x)
                 y = np.append(y, point_0[1]*r + curve_y)
                 z = np.append(z, point_0[2]*r + curve_z)
 
+            #створюємо масив граней фігури
             faces = []
             curve_size = len(curve_x)
             for i in range(len(r_values)-1):
@@ -443,11 +465,12 @@ class Window(MainWindow):
                     faces.append((i+1)*curve_size+j)
                     faces.append((i+1)*curve_size+(j+1))
 
+            #будуємо та відображаємо поверхню
             grid = pv.PolyData(list(zip(x, y, z)), faces = faces)
-
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
 
+            #будуємо та відображаємо твірну
             start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
             end_point = [curve_x[0] - 10 * point_0[0], curve_y[0] - 10 * point_0[1], curve_z[0] - 10 * point_0[2]]
             line = pv.Line(start_point, end_point)
@@ -457,10 +480,11 @@ class Window(MainWindow):
                 [[curve_x[0],curve_y[0],curve_z[0]],[curve_x[len(curve_x)//2],curve_y[len(curve_y)//2],curve_z[len(curve_z)//2]]])
             # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
-            self.plotter.add_mesh(grid, color='yellow', line_width=5, opacity=0.5)
 
+            #запускаємо анімацію
             self.animate(grid.points)
 
+            #додаємо підписи
             array = np.vstack((array,mid_point_array))
             arrow = pv.Arrow(first_dot, vector, scale = 'auto')
             self.plotter.add_mesh(arrow, color='blue')
@@ -500,14 +524,17 @@ class Window(MainWindow):
         
         print(grid_2.fig_type)
         if grid_2.fig_type == 'Conic Surface':
+            #обчислюємо параметри необхідні для перерізу
             denominator = A*(grid_2.curve_x - grid_2.point_0[0]) + B*(grid_2.curve_y - grid_2.point_0[1]) + C*(grid_2.curve_z - grid_2.point_0[2])
             numerator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2] + D
             p = -numerator / denominator
 
+            #обчислюємо точки перетину
             x = p*(grid_2.curve_x - grid_2.point_0[0]) + grid_2.point_0[0]
             y = p*(grid_2.curve_y - grid_2.point_0[1]) + grid_2.point_0[1]
             z = p*(grid_2.curve_z - grid_2.point_0[2]) + grid_2.point_0[2]
 
+            #будуємо та відображаємо перетин
             intersection = pv.PolyData(list(zip(x, y, z)))
             if intersection.points.size == 0:
                 msg = QMessageBox()
@@ -519,13 +546,15 @@ class Window(MainWindow):
 
         
         if grid_2.fig_type == 'Cylindrical Surface':
-            print("HERE")
+            #обчислюємо параметри необхідні для перерізу
             denominator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2]
+
+            #перевіряємо на часний випадок
             if np.isclose(denominator, 0):
                 if np.isclose(A*grid_2.curve_x[0] + B*grid_2.curve_y[0] + C*grid_2.curve_z[0] + D, 0):
                     overlap_points = grid_2.mesh.points
                     intersection = pv.PolyData(overlap_points)
-            
+                    #будуємо переріз
                     self.plotter.add_mesh(intersection, color='white', line_width=10)
                     self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
                     self.text_box.addItem(QListWidgetItem("Intersection"))
@@ -534,11 +563,13 @@ class Window(MainWindow):
                     msg.setIcon(QMessageBox.Critical)
                     msg.setText("No intersection found")
             else:
+                #обчислюємо точки перетину
                 k = A * grid_2.curve_x + B * grid_2.curve_y + C*grid_2.curve_z + D
                 k = -k / denominator
                 x = grid_2.point_0[0] * k + grid_2.curve_x
                 y = grid_2.point_0[1] * k + grid_2.curve_y
                 z = grid_2.point_0[2] * k + grid_2.curve_z
+                #будуємо переріз
                 intersection = pv.PolyData(list(zip(x, y, z)))
                 self.plotter.add_mesh(intersection, color='white', line_width=10)
                 self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
@@ -567,14 +598,21 @@ class Window(MainWindow):
             self.text_box.addItem(QListWidgetItem("Intersection"))
 
     def delete_figures(self):
+        #отримуємо перелік обраних фігур
         items = self.text_box.selectedIndexes()
         indexes = [i.row() for i in items]
 
+        #видаляємо обрані фігури
         for i in reversed(sorted(indexes)):
             self.text_box.takeItem(i)
         self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
+
+        #очищуємо графік
         self.plotter.clear()
         self.plotter.show_grid()
+        self.plotter.enable_lightkit()
+        
+        #перебудовуємо усі примітиви що залишилися
         for i in self.meshes:
             match i.fig_type:
                 case 'line':
@@ -637,6 +675,7 @@ class Window(MainWindow):
                 msg.setText(str(e))
                 return
 
+            #будуємо твірну
             grid = pv.StructuredGrid(x_g, y_g, z_g)
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=9)
@@ -653,13 +692,12 @@ class Window(MainWindow):
                 for x, y, z in zip(x_g, y_g, z_g):
                     points.append(np.dot(R, np.array([x-point_0[0], y - point_0[1], z - point_0[2]])) + np.array(point_0))
             
-            
             x, y, z = zip(*points)
             x = np.array(x)
             y = np.array(y)
             z = np.array(z)
-            # Calculate midpoint coordinates
            
+            #створюємо масив граней фігури
             faces = []
             curve_size = len(x_g)
             for i in range(359):
@@ -708,35 +746,30 @@ class Window(MainWindow):
             mult = min([_get_multiplier(vector[0], point_0[0], bounds[1], 1e9), _get_multiplier(vector[1], point_0[1], bounds[3], 1e9), _get_multiplier(vector[2], point_0[2], bounds[5], 1e9)])
             start_point = [point_coor + vector_coor * mult for point_coor, vector_coor in zip(point_0, vector)]
 
-            #будуємо лінію
+            #будуємо вісь обертання
             line = pv.Line(start_point, end_point)
             self.plotter.add_mesh(line, color='red', line_width=5)
             mid_point = [(start + end) / 2 for start, end in zip(start_point, end_point)]
             array = np.array(
                 [ [x_g[len(x_g)//2],y_g[len(y_g)//2],z_g[len(z_g)//2]]])
-            # Create an array with the midpoint coordinates
             mid_point_array = np.array(mid_point)
 
-            # Vertically stack the midpoint array with the existing array
+            #додаємо підписи
             array = np.vstack((point_0, array, mid_point_array))
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
             self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array), ArrowLabel(line, 'red')], color=color))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
-         
 
-        
-
-
-
+    #Функція для анімації
     def animate(self, points, step=1000):
         try:
+            #запускаємо анімацію
             animation_plotter = pv.Plotter()
             animation_plotter.open_gif('points.gif')
 
-            
-
+            #цикл анімації
             for i in range(0, len(points) - step, step):
                 poly = pv.PolyData(points[i:i+step])
                 
@@ -746,14 +779,18 @@ class Window(MainWindow):
         except Exception as e:
             return
 
-        #animation_plotter.close()
-
-    def pick_figure(self):        
+    #Функція для виділення фігур
+    def pick_figure(self):
+        #отримуємо перелік обраних фігур        
         items = self.text_box.selectedIndexes()
         indexes = [i.row() for i in items]
         
+        #очищуємо графік
         self.plotter.clear()
         self.plotter.show_grid()
+        self.plotter.enable_lightkit()
+
+        #перебудовуємо усі примітиви, обрані примітиви робимо більш ярким кольором
         for i, figure in enumerate(self.meshes):
             if i in indexes:
                 match figure.fig_type:
