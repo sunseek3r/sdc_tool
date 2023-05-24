@@ -245,9 +245,10 @@ class Window(MainWindow):
 
         #обчислюємо координати точок площини по z
         x, y = np.meshgrid(x, y)
+        x = x.reshape(-1)
+        y = y.reshape(-1)
+        print(x.shape)
         z = -(A * x + B * y + D) / C
-
-        #будуємо площину
         grid = pv.StructuredGrid(x, y, z)
         color = self.get_color()
         #відображаємо побудовану площину на графіку та додаємо її до віджету з переліком примітивів
@@ -575,6 +576,7 @@ class Window(MainWindow):
         self.meshes = [i for j, i in enumerate(self.meshes) if j not in indexes]
         self.plotter.clear()
         self.plotter.show_grid()
+        
         for i in self.meshes:
             match i.fig_type:
                 case 'line':
@@ -733,7 +735,6 @@ class Window(MainWindow):
     def animate(self, points, step=1000):
         try:
             animation_plotter = pv.Plotter()
-            animation_plotter.open_gif('points.gif')
 
             
 
