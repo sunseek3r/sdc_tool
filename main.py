@@ -734,16 +734,10 @@ class Window(MainWindow):
 
     def animate(self, points, step=1000):
         try:
-            animation_plotter = pv.Plotter()
-
-            
-
-            for i in range(0, len(points) - step, step):
-                poly = pv.PolyData(points[i:i+step])
-                
-                animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
-                animation_plotter.render()
-                animation_plotter.write_frame()
+            animation_plotter = BackgroundPlotter()
+            for i in range(step, len(points) - step, step):
+                grid = pv.PolyData(points[(i-step):i])
+                animation_plotter.add_mesh(grid)
         except Exception as e:
             return
 
