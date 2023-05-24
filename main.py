@@ -352,7 +352,10 @@ class Window(MainWindow):
                     faces.append(i*curve_size+(j+1))
                     faces.append((i+1)*curve_size+j)
                     faces.append((i+1)*curve_size+(j+1))
-                    
+
+            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(grid, color='green', line_width=9)
+
             #grid = pv.PolyData(list(zip(x,y,z)))
             grid = pv.PolyData(list(zip(x,y,z)), faces=faces)
             color = self.get_color()
@@ -430,7 +433,17 @@ class Window(MainWindow):
                 y = np.append(y, point_0[1]*r + curve_y)
                 z = np.append(z, point_0[2]*r + curve_z)
 
-            grid = pv.PolyData(list(zip(x, y, z)))
+            faces = []
+            curve_size = len(curve_x)
+            for i in range(len(r_values)-1):
+                for j in range(curve_size-1):
+                    faces.append(4)
+                    faces.append(i*curve_size+j)
+                    faces.append(i*curve_size+(j+1))
+                    faces.append((i+1)*curve_size+j)
+                    faces.append((i+1)*curve_size+(j+1))
+
+            grid = pv.PolyData(list(zip(x, y, z)), faces = faces)
 
             color = self.get_color()
             self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
@@ -647,14 +660,20 @@ class Window(MainWindow):
             z = np.array(z)
             # Calculate midpoint coordinates
            
-
-            
-            
+            faces = []
+            curve_size = len(x_g)
+            for i in range(359):
+                for j in range(curve_size-1):
+                    faces.append(4)
+                    faces.append(i*curve_size+j)
+                    faces.append(i*curve_size+(j+1))
+                    faces.append((i+1)*curve_size+j)
+                    faces.append((i+1)*curve_size+(j+1))
 
             #будуємо та відображаємо поверхню
             self.animate(points)
 
-            surface = pv.PolyData(points)
+            surface = pv.PolyData(points, faces)
 
             color = self.get_color()
             self.plotter.add_mesh(surface, color=color, opacity=0.25)
