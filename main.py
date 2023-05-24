@@ -245,9 +245,8 @@ class Window(MainWindow):
 
         #обчислюємо координати точок площини по z
         x, y = np.meshgrid(x, y)
-        x = x.reshape(-1)
-        y = y.reshape(-1)
-        print(x.shape)
+        #x = x.reshape(-1)
+        #y = y.reshape(-1)
         z = -(A * x + B * y + D) / C
         grid = pv.StructuredGrid(x, y, z)
         color = self.get_color()
