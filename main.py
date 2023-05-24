@@ -250,9 +250,9 @@ class Window(MainWindow):
 
         #обчислюємо координати точок площини по z
         x, y = np.meshgrid(x, y)
+        #x = x.reshape(-1)
+        #y = y.reshape(-1)
         z = -(A * x + B * y + D) / C
-
-        #будуємо площину
         grid = pv.StructuredGrid(x, y, z)
         color = self.get_color()
 
@@ -613,6 +613,7 @@ class Window(MainWindow):
         self.plotter.enable_lightkit()
         
         #перебудовуємо усі примітиви що залишилися
+
         for i in self.meshes:
             match i.fig_type:
                 case 'line':
@@ -765,17 +766,12 @@ class Window(MainWindow):
     #Функція для анімації
     def animate(self, points, step=1000):
         try:
-            #запускаємо анімацію
-            animation_plotter = pv.Plotter()
-            animation_plotter.open_gif('points.gif')
 
-            #цикл анімації
-            for i in range(0, len(points) - step, step):
-                poly = pv.PolyData(points[i:i+step])
-                
-                animation_plotter.add_mesh(poly, opacity=0.25, color="lightblue")
-                animation_plotter.render()
-                animation_plotter.write_frame()
+            animation_plotter = BackgroundPlotter()
+            for i in range(step, len(points) - step, step):
+                grid = pv.PolyData(points[(i-step):i])
+                animation_plotter.add_mesh(grid)
+
         except Exception as e:
             return
 
