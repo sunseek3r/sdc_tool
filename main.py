@@ -381,7 +381,7 @@ class Window(MainWindow):
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
-            self.meshes.append(ConicSurface(grid, [PointLabel(label, array)], 
+            self.meshes.append(ConicSurface(grid, [PointLabel(label, array), ArrowLabel(line, 'red')], 
                                             curve_x, curve_y, curve_z, point_0,color = color))
 
             self.plotter.reset_camera()
@@ -455,7 +455,7 @@ class Window(MainWindow):
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
 
             
-            self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array)], 
+            self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array), ArrowLabel(line, 'red')], 
                                                 curve_x, curve_y, curve_z, point_0, color = color))
 
 
@@ -583,7 +583,10 @@ class Window(MainWindow):
                 if isinstance(j, PointLabel):
                     self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
                 else:
-                    self.plotter.add_mesh(j.arrow, color='blue')
+                    if j.color=='red':
+                        self.plotter.add_mesh(j.arrow, color=j.color, line_width=7)
+                    else:
+                        self.plotter.add_mesh(j.arrow, color=j.color)
 
     #Функція для побудови поверхні обертання
     def add_surface_revolution(self):
@@ -662,7 +665,7 @@ class Window(MainWindow):
                 )
          
             label = ["point c " +  str(self.temp_surface_of_revolution), "point p " + str(self.temp_surface_of_revolution),"guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
-            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array)], color=color))
+            
 
 
             #обчислюємо напрямний вектор для прямої  
@@ -699,7 +702,7 @@ class Window(MainWindow):
             array = np.vstack((point_0, array, mid_point_array))
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
-
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array), ArrowLabel(line, 'red')], color=color))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
          

@@ -16,8 +16,10 @@ class PointLabel():
         self.array = array
 
 class ArrowLabel():
-    def __init__(self, arrow):
+    def __init__(self, arrow, color='blue'):
         self.arrow = arrow
+        self.color = color
+
 
 
 class ConicSurface(Figure):
