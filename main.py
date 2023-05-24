@@ -13,9 +13,9 @@ from pyvistaqt import QtInteractor, MainWindow, BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from figure_classes import Figure, Surface, ArrowLabel, PointLabel, ConicSurface, CylindricSurface
-from inputs import SphereDialog, PointDialog, VectorLineDialog, ParameterDialog
+from inputs import PointDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
-from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix, sort_points
+from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix
 from scipy.spatial import cKDTree
 import time
 
