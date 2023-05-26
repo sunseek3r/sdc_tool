@@ -848,11 +848,17 @@ class Window(MainWindow):
                     case 'Surface of revolution':
                         self.plotter.add_mesh(figure.mesh, color=figure.color, opacity=0.25)
             #print(len(i.labels))
-            for j in figure.labels:
-                if isinstance(j, PointLabel):
-                    self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
+            for i in figure.labels:
+                if isinstance(i, PointLabel):
+                    self.plotter.add_point_labels(i.array, i.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
                 else:
-                    self.plotter.add_mesh(j.arrow, color='blue')
+                    if i.color=='red':
+                        self.plotter.add_mesh(i.arrow, color=i.color, line_width=7)
+                    elif i.color=='green':
+                        self.plotter.add_mesh(i.arrow, color=i.color, line_width=9)
+                    else:
+                        self.plotter.add_mesh(i.arrow, color=i.color)
+
 
 
 
