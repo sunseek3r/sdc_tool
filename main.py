@@ -186,6 +186,16 @@ class Window(MainWindow):
         if dialog.exec():
             point2 = dialog.getInputs()
 
+
+        if point1 == point2:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Beginning and end of the line can't be the same point")
+            msg.setWindowTitle("Error")
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            returnValue = msg.exec()
+            if returnValue == QMessageBox.Ok:
+                return
         #обчислюємо напрямний вектор для прямої  
         point1 = [float(i) for i in point1]
         point2 = [float(i) for i in point2]
@@ -247,12 +257,28 @@ class Window(MainWindow):
         #обчислюємо координати точок площини по x та y
         x = np.arange(self.settings.x_bounds[0], self.settings.x_bounds[1], 0.3)
         y = np.arange(self.settings.y_bounds[0], self.settings.y_bounds[1], 0.3)
-
+        z = np.arange(self.settings.z_bounds[0], self.settings.z_bounds[1], 0.3)
         #обчислюємо координати точок площини по z
-        x, y = np.meshgrid(x, y)
-        #x = x.reshape(-1)
-        #y = y.reshape(-1)
-        z = -(A * x + B * y + D) / C
+        if C != 0:
+            x, y = np.meshgrid(x, y)
+            #x = x.reshape(-1)
+            #y = y.reshape(-1)
+            z = -(A * x + B * y + D) / C
+        elif B != 0:
+            x, z = np.meshgrid(x, z)
+            y = -(A * x + C * z + D) / B
+        elif A != 0:
+            y, z = np.meshgrid(y, z)
+            x = -(B * y + C * z + D) / A
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Wrong norm vector")
+            msg.setWindowTitle("Error")
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            returnValue = msg.exec()
+            if returnValue == QMessageBox.Ok:
+                return
         grid = pv.StructuredGrid(x, y, z)
         color = self.get_color()
 
@@ -365,8 +391,8 @@ class Window(MainWindow):
                     faces.append((i+1)*curve_size+(j+1))
 
             #відображаємо напрямну
-            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
-            self.plotter.add_mesh(grid, color='green', line_width=9)
+            guide = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(guide, color='green', line_width=9)
 
             #будуємо та відображаємо поверхню
             grid = pv.PolyData(list(zip(x,y,z)), faces=faces)
@@ -398,7 +424,7 @@ class Window(MainWindow):
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
-            self.meshes.append(ConicSurface(grid, [PointLabel(label, array), ArrowLabel(line, 'red')], 
+            self.meshes.append(ConicSurface(grid, [PointLabel(label, array), ArrowLabel(line, 'red'), ArrowLabel(guide, 'green')], 
                                             curve_x, curve_y, curve_z, point_0,color = color))
 
             self.plotter.reset_camera()
@@ -435,8 +461,8 @@ class Window(MainWindow):
             first_dot = np.array([curve_x[0], curve_y[0], curve_z[0]])
 
             #відображаємо напрямну
-            grid = pv.StructuredGrid(curve_x, curve_y, curve_z)
-            self.plotter.add_mesh(grid, color='green', line_width=9)
+            guide = pv.StructuredGrid(curve_x, curve_y, curve_z)
+            self.plotter.add_mesh(guide, color='green', line_width=9)
 
             #перевіряємо що вектор ненульовий
             if np.isclose(np.linalg.norm(point_0), 0):
@@ -492,7 +518,7 @@ class Window(MainWindow):
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
 
             
-            self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array), ArrowLabel(line, 'red')], 
+            self.meshes.append(CylindricSurface(grid, [ArrowLabel(arrow),PointLabel(label, array), ArrowLabel(line, 'red'), ArrowLabel(guide, 'green')], 
                                                 curve_x, curve_y, curve_z, point_0, color = color))
 
 
@@ -589,7 +615,6 @@ class Window(MainWindow):
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("No intersection found")
                 return
-            overlap_points = sort_points(overlap_points)
             #Відображаємо знайдений перетин
             intersection = pv.PolyData(overlap_points)
             
@@ -637,6 +662,8 @@ class Window(MainWindow):
                 else:
                     if j.color=='red':
                         self.plotter.add_mesh(j.arrow, color=j.color, line_width=7)
+                    elif j.color=='green':
+                        self.plotter.add_mesh(j.arrow, color=j.color, line_width=9)
                     else:
                         self.plotter.add_mesh(j.arrow, color=j.color)
 
@@ -677,9 +704,9 @@ class Window(MainWindow):
                 return
 
             #будуємо твірну
-            grid = pv.StructuredGrid(x_g, y_g, z_g)
+            guide = pv.StructuredGrid(x_g, y_g, z_g)
             color = self.get_color()
-            self.plotter.add_mesh(grid, color=color, line_width=9)
+            self.plotter.add_mesh(guide, color='green', line_width=9)
 
             arrow = pv.Arrow(point_0, vector_n, scale = 'auto')
 
@@ -759,7 +786,7 @@ class Window(MainWindow):
             array = np.vstack((point_0, array, mid_point_array))
             self.plotter.add_mesh(arrow, color='blue')
             label = ["point c " +  str(self.temp_surface_of_revolution), "guide curve " + str(self.temp_surface_of_revolution),"creative line " + str(self.temp_surface_of_revolution)]
-            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array), ArrowLabel(line, 'red')], color=color))
+            self.meshes.append(Figure(surface, 'Surface of revolution', labels=[PointLabel(label, array), ArrowLabel(line, 'red'), ArrowLabel(guide, 'green')], color=color))
             self.plotter.add_point_labels(array,label,italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
