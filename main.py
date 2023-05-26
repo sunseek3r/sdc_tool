@@ -16,8 +16,6 @@ from figure_classes import Figure, Surface, ArrowLabel, PointLabel, ConicSurface
 from inputs import PointDialog, VectorLineDialog, ParameterDialog
 from settings import Settings
 from instruments import compute_points, compute_parameter, get_bounds, get_rotational_matrix
-from scipy.spatial import cKDTree
-import time
 
 
 # Function to create and display the 3D plot

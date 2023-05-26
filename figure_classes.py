@@ -1,5 +1,5 @@
 """
-    A file for figure classes (look TODO in main.py)
+    A file for figure classes
 """
 
 class Figure():
