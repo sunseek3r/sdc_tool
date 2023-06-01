@@ -38,7 +38,7 @@ class Window(MainWindow):
         self.temp_surface_of_revolution = 0
         self.settings = Settings() 
         #Задаємо назву та розміри вікна
-
+        self.setFont()
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
@@ -495,7 +495,7 @@ class Window(MainWindow):
             #будуємо та відображаємо поверхню
             grid = pv.PolyData(list(zip(x, y, z)), faces = faces)
             color = self.get_color()
-            self.plotter.add_mesh(grid, color='blue', line_width=5, opacity=0.9)
+            self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
 
             #будуємо та відображаємо твірну
             start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
