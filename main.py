@@ -158,13 +158,14 @@ class Window(MainWindow):
     #Функція для побудови прямої за двома точками
     def add_line(self):
         self.temp_line += 1
+
         def _get_multiplier(directional_coor, anchor_coor, coor_type):
             if coor_type == "X":
-                bounds = self.settings.x_bounds
+                bounds = [min(self.plotter.bounds[0], -10), max(self.plotter.bounds[1], 10)]
             elif coor_type == "Y":
-                bounds = self.settings.y_bounds
+                bounds = [min(self.plotter.bounds[2], -10), max(self.plotter.bounds[3], 10)]
             elif coor_type == "Z":
-                bounds = self.settings.z_bounds
+                bounds = [min(self.plotter.bounds[4], -10), max(self.plotter.bounds[5], 10)]
             
             if directional_coor == 0:
                 return 1e9 # cannot extend with this coordinate => return infinity
@@ -255,9 +256,9 @@ class Window(MainWindow):
         D = -(point_c[0] * A + point_c[1] * B + point_c[2] * C)
 
         #обчислюємо координати точок площини по x та y
-        x = np.arange(self.settings.x_bounds[0], self.settings.x_bounds[1], 0.3)
-        y = np.arange(self.settings.y_bounds[0], self.settings.y_bounds[1], 0.3)
-        z = np.arange(self.settings.z_bounds[0], self.settings.z_bounds[1], 0.3)
+        x = np.arange(min(self.plotter.bounds[0], -10), max(self.plotter.bounds[1], 10), 0.3)
+        y = np.arange(min(self.plotter.bounds[2], -10), max(self.plotter.bounds[3], 10), 0.3)
+        z = np.arange(min(self.plotter.bounds[4], -10), max(self.plotter.bounds[5], 10), 0.3)
         #обчислюємо координати точок площини по z
         if C != 0:
             x, y = np.meshgrid(x, y)
@@ -494,7 +495,7 @@ class Window(MainWindow):
             #будуємо та відображаємо поверхню
             grid = pv.PolyData(list(zip(x, y, z)), faces = faces)
             color = self.get_color()
-            self.plotter.add_mesh(grid, color=color, line_width=5, opacity=0.5)
+            self.plotter.add_mesh(grid, color='blue', line_width=5, opacity=0.9)
 
             #будуємо та відображаємо твірну
             start_point = [curve_x[0] + 10 * point_0[0], curve_y[0] + 10 * point_0[1], curve_z[0] + 10 * point_0[2]]
@@ -705,6 +706,8 @@ class Window(MainWindow):
 
             #будуємо твірну
             guide = pv.StructuredGrid(x_g, y_g, z_g)
+            for p in guide.points:
+                print(p)
             color = self.get_color()
             self.plotter.add_mesh(guide, color='green', line_width=9)
 
@@ -737,7 +740,7 @@ class Window(MainWindow):
                     faces.append((i+1)*curve_size+(j+1))
 
             #будуємо та відображаємо поверхню
-            self.animate(points)
+            self.animate(points, step=2000)
 
             surface = pv.PolyData(points, faces)
 
@@ -791,12 +794,15 @@ class Window(MainWindow):
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
     #Функція для анімації
-    def animate(self, points, step=1000):
+    def animate(self, points, step=500):
         try:
 
             animation_plotter = BackgroundPlotter()
             for i in range(step, len(points) - step, step):
                 grid = pv.PolyData(points[(i-step):i])
+                animation_plotter.add_mesh(grid)
+            if(len(points) < step):
+                grid = pv.PolyData(points)
                 animation_plotter.add_mesh(grid)
 
         except Exception as e:
@@ -812,7 +818,7 @@ class Window(MainWindow):
         self.plotter.clear()
         self.plotter.show_grid()
         self.plotter.enable_lightkit()
-
+        
         #перебудовуємо усі примітиви, обрані примітиви робимо більш ярким кольором
         for i, figure in enumerate(self.meshes):
             if i in indexes:
@@ -852,7 +858,12 @@ class Window(MainWindow):
                 if isinstance(j, PointLabel):
                     self.plotter.add_point_labels(j.array, j.label, italic=True,font_size=20,point_color='red',point_size=20,render_points_as_spheres=True,always_visible=True,shadow=True)
                 else:
-                    self.plotter.add_mesh(j.arrow, color='blue')
+                    if j.color=='red':
+                        self.plotter.add_mesh(j.arrow, color=j.color, line_width=7)
+                    elif j.color=='green':
+                        self.plotter.add_mesh(j.arrow, color=j.color, line_width=9)
+                    else:
+                        self.plotter.add_mesh(j.arrow, color=j.color)
 
 
 

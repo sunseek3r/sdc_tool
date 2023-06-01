@@ -52,17 +52,19 @@ def compute_parameter(functions):
     z_values = f_z(ts)
 
     #знаходимо точки що лежать за межами побудови
-    mask = np.ones_like(x_values, dtype=bool)
+    #mask = np.ones_like(x_values, dtype=bool)
     to_delete = []
     for ind, (x,y,z) in enumerate(zip(x_values, y_values, z_values)):
         if (x > 100 or x < -100) or (y > 100 or y < -100) or (z > 100 or z < -100):
-            to_delete.append(ind)
+            x_values[ind] = float('NaN')
+            y_values[ind] = float('NaN')
+            z_values[ind] = float('NaN')
 
     #видаляємо точки що лежать за межами побудови
-    mask[to_delete] = False
-    x_values = x_values[mask]
-    y_values = y_values[mask]
-    z_values = z_values[mask]
+    #mask[to_delete] = False
+    #x_values = x_values[mask]
+    #y_values = y_values[mask]
+    #z_values = z_values[mask]
 
     return x_values, y_values, z_values
 
