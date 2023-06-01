@@ -38,7 +38,6 @@ class Window(MainWindow):
         self.temp_surface_of_revolution = 0
         self.settings = Settings() 
         #Задаємо назву та розміри вікна
-        self.setFont()
         self.setWindowTitle("SDC Tool")
         self.setGeometry(50, 50, 800, 600)
 
@@ -794,7 +793,7 @@ class Window(MainWindow):
             self.text_box.addItem(QListWidgetItem('\n'.join(functions)))
 
     #Функція для анімації
-    def animate(self, points, step=500):
+    def animate(self, points, step=1000):
         try:
 
             animation_plotter = BackgroundPlotter()
