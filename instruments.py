@@ -1,7 +1,6 @@
 import numpy as np
 import re
 from sympy import symbols, lambdify
-import vtk
 
 #Функція для парсингу введеної користувачем функції
 def parse_function(function_str):
