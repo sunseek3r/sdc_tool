@@ -582,6 +582,11 @@ class Window(MainWindow):
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("No intersection found")
+                msg.setWindowTitle("Error")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                returnValue = msg.exec()
+                if returnValue == QMessageBox.Ok:
+                    return
             self.plotter.add_mesh(intersection, color='white', line_width=10)
             self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
             self.text_box.addItem(QListWidgetItem("Intersection"))
@@ -604,6 +609,11 @@ class Window(MainWindow):
                     msg = QMessageBox()
                     msg.setIcon(QMessageBox.Critical)
                     msg.setText("No intersection found")
+                    msg.setWindowTitle("Error")
+                    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                    returnValue = msg.exec()
+                    if returnValue == QMessageBox.Ok:
+                        return
             else:
                 #обчислюємо точки перетину
                 k = A * grid_2.curve_x + B * grid_2.curve_y + C*grid_2.curve_z + D
@@ -630,7 +640,11 @@ class Window(MainWindow):
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("No intersection found")
-                return
+                msg.setWindowTitle("Error")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                returnValue = msg.exec()
+                if returnValue == QMessageBox.Ok:
+                    return
             #Відображаємо знайдений перетин
             intersection = pv.PolyData(overlap_points)
             
