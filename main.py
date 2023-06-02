@@ -611,89 +611,89 @@ class Window(MainWindow):
             if (grid_2.fig_type == 'Surface'):
                 grid_1, grid_2 = grid_2, grid_1
 
-        A = grid_1.A
-        B = grid_1.B
-        C = grid_1.C
-        D = grid_1.D
-        
-        print(grid_2.fig_type)
-        if grid_2.fig_type == 'Conic Surface':
-            #обчислюємо параметри необхідні для перерізу
-            denominator = A*(grid_2.curve_x - grid_2.point_0[0]) + B*(grid_2.curve_y - grid_2.point_0[1]) + C*(grid_2.curve_z - grid_2.point_0[2])
-            numerator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2] + D
-            overlap_x = np.array([])
-            overlap_y = np.array([])
-            overlap_z = np.array([])
-            if np.isclose(numerator, 0):
-                for d, x, y, z in zip(denominator, grid_2.curve_x, grid_2.curve_y, grid_2.curve_z):
-                    if np.isclose(d, 0, atol=2*1e-1):
-                        print(d)
-                        r_values = np.arange(-10, 10, 0.1)
-                        #обчислюємо точки поверхні
-                        for r in r_values:
-                            overlap_x = np.append(overlap_x, grid_2.point_0[0] + r * (x - grid_2.point_0[0]))
-                            overlap_y = np.append(overlap_y, grid_2.point_0[1] + r * (y - grid_2.point_0[1]))
-                            overlap_z = np.append(overlap_z, grid_2.point_0[2] + r * (z - grid_2.point_0[2]))
-            else:        
-                p = -numerator / denominator
-                #обчислюємо точки перетину
-                overlap_x = p*(grid_2.curve_x - grid_2.point_0[0]) + grid_2.point_0[0]
-                overlap_y = p*(grid_2.curve_y - grid_2.point_0[1]) + grid_2.point_0[1]
-                overlap_z = p*(grid_2.curve_z - grid_2.point_0[2]) + grid_2.point_0[2]
-
-            #будуємо та відображаємо перетин
-            intersection = pv.PolyData(list(zip(overlap_x, overlap_y, overlap_z)))
-            if intersection.points.size == 0:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("No intersection found")
-            self.plotter.add_mesh(intersection, color='white', line_width=10)
-            self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
-            self.text_box.addItem(QListWidgetItem("Intersection"))
-
-        
-        if grid_2.fig_type == 'Cylindrical Surface':
-            #обчислюємо параметри необхідні для перерізу
-            denominator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2]
-            #перевіряємо на часний випадок
-            if np.isclose(denominator, 0):
+            A = grid_1.A
+            B = grid_1.B
+            C = grid_1.C
+            D = grid_1.D
+            
+            print(grid_2.fig_type)
+            if grid_2.fig_type == 'Conic Surface':
+                #обчислюємо параметри необхідні для перерізу
+                denominator = A*(grid_2.curve_x - grid_2.point_0[0]) + B*(grid_2.curve_y - grid_2.point_0[1]) + C*(grid_2.curve_z - grid_2.point_0[2])
+                numerator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2] + D
                 overlap_x = np.array([])
                 overlap_y = np.array([])
                 overlap_z = np.array([])
-                for x, y, z in zip(grid_2.curve_x, grid_2.curve_y, grid_2.curve_z):
-                    if np.isclose(A*x + B*y + C*z + D, 0, atol=3*1e-1):
-                        print(A*x + B*y + C*z + D)
-                        r_values = np.arange(-10, 10, 0.1)
-                        for r in r_values:
-                            overlap_x = np.append(overlap_x, grid_2.point_0[0]*r + x)
-                            overlap_y = np.append(overlap_y, grid_2.point_0[1]*r + y)
-                            overlap_z = np.append(overlap_z, grid_2.point_0[2]*r + z)
-                if overlap_x.size == 0:
+                if np.isclose(numerator, 0):
+                    for d, x, y, z in zip(denominator, grid_2.curve_x, grid_2.curve_y, grid_2.curve_z):
+                        if np.isclose(d, 0, atol=2*1e-1):
+                            print(d)
+                            r_values = np.arange(-10, 10, 0.1)
+                            #обчислюємо точки поверхні
+                            for r in r_values:
+                                overlap_x = np.append(overlap_x, grid_2.point_0[0] + r * (x - grid_2.point_0[0]))
+                                overlap_y = np.append(overlap_y, grid_2.point_0[1] + r * (y - grid_2.point_0[1]))
+                                overlap_z = np.append(overlap_z, grid_2.point_0[2] + r * (z - grid_2.point_0[2]))
+                else:        
+                    p = -numerator / denominator
+                    #обчислюємо точки перетину
+                    overlap_x = p*(grid_2.curve_x - grid_2.point_0[0]) + grid_2.point_0[0]
+                    overlap_y = p*(grid_2.curve_y - grid_2.point_0[1]) + grid_2.point_0[1]
+                    overlap_z = p*(grid_2.curve_z - grid_2.point_0[2]) + grid_2.point_0[2]
+
+                #будуємо та відображаємо перетин
+                intersection = pv.PolyData(list(zip(overlap_x, overlap_y, overlap_z)))
+                if intersection.points.size == 0:
                     msg = QMessageBox()
                     msg.setIcon(QMessageBox.Critical)
                     msg.setText("No intersection found")
-                else :     
-                    intersection = pv.PolyData(list(zip(overlap_x,overlap_y,overlap_z)))
-
-                    #будуємо переріз
-                    intersection = pv.PolyData(list(zip(x, y, z)))
-                    self.plotter.add_mesh(intersection, color='white', line_width=10)
-                    self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
-                    self.text_box.addItem(QListWidgetItem("Intersection"))
-
-            else:
-                #обчислюємо точки перетину
-                k = A * grid_2.curve_x + B * grid_2.curve_y + C*grid_2.curve_z + D
-                k = -k / denominator
-                x = grid_2.point_0[0] * k + grid_2.curve_x
-                y = grid_2.point_0[1] * k + grid_2.curve_y
-                z = grid_2.point_0[2] * k + grid_2.curve_z
-                #будуємо переріз
-                intersection = pv.PolyData(list(zip(x, y, z)))
-
                 self.plotter.add_mesh(intersection, color='white', line_width=10)
                 self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
                 self.text_box.addItem(QListWidgetItem("Intersection"))
+
+            
+            if grid_2.fig_type == 'Cylindrical Surface':
+                #обчислюємо параметри необхідні для перерізу
+                denominator = A*grid_2.point_0[0] + B*grid_2.point_0[1] + C*grid_2.point_0[2]
+                #перевіряємо на часний випадок
+                if np.isclose(denominator, 0):
+                    overlap_x = np.array([])
+                    overlap_y = np.array([])
+                    overlap_z = np.array([])
+                    for x, y, z in zip(grid_2.curve_x, grid_2.curve_y, grid_2.curve_z):
+                        if np.isclose(A*x + B*y + C*z + D, 0, atol=3*1e-1):
+                            print(A*x + B*y + C*z + D)
+                            r_values = np.arange(-10, 10, 0.1)
+                            for r in r_values:
+                                overlap_x = np.append(overlap_x, grid_2.point_0[0]*r + x)
+                                overlap_y = np.append(overlap_y, grid_2.point_0[1]*r + y)
+                                overlap_z = np.append(overlap_z, grid_2.point_0[2]*r + z)
+                    if overlap_x.size == 0:
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Critical)
+                        msg.setText("No intersection found")
+                    else :     
+                        intersection = pv.PolyData(list(zip(overlap_x,overlap_y,overlap_z)))
+
+                        #будуємо переріз
+                        intersection = pv.PolyData(list(zip(x, y, z)))
+                        self.plotter.add_mesh(intersection, color='white', line_width=10)
+                        self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
+                        self.text_box.addItem(QListWidgetItem("Intersection"))
+
+                else:
+                    #обчислюємо точки перетину
+                    k = A * grid_2.curve_x + B * grid_2.curve_y + C*grid_2.curve_z + D
+                    k = -k / denominator
+                    x = grid_2.point_0[0] * k + grid_2.curve_x
+                    y = grid_2.point_0[1] * k + grid_2.curve_y
+                    z = grid_2.point_0[2] * k + grid_2.curve_z
+                    #будуємо переріз
+                    intersection = pv.PolyData(list(zip(x, y, z)))
+
+                    self.plotter.add_mesh(intersection, color='white', line_width=10)
+                    self.meshes.append(Figure(intersection, 'Intersection', labels=[], color = "white"))
+                    self.text_box.addItem(QListWidgetItem("Intersection"))
         except Exception as e:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
