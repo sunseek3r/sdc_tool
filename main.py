@@ -100,6 +100,10 @@ class Window(MainWindow):
         pick_button.triggered.connect(self.pick_figure)
         tools_menu.addAction(pick_button)
 
+        help_button = QtWidgets.QAction('Help', self)
+        help_button.triggered.connect(self.show_help)
+        tools_menu.addAction(help_button)
+
         #Створюємо та додаємо до лівого віджета кнопку для побудови лінії за двома точками
         line_button = QPushButton("Line", self)
         line_button.clicked.connect(self.add_line)
@@ -136,6 +140,20 @@ class Window(MainWindow):
         self.setCentralWidget(main_widget)
         self.show()
 
+    def show_help(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("""    Use \'.\' as decimal point \n 
+    To input a power use ** (i.e. t**2 is t squared)
+    To input squared root use sqrt()
+    Input supports sin, cos
+    To input e use exp()""")
+        msg.setWindowTitle("Help")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        returnValue = msg.exec()
+        if returnValue == QMessageBox.Ok:
+            return
+    
     #Функція, що повертає випадковий колір
     def get_color(self):
         return '#%06X' % randint(0, 0xFFFFFF)
